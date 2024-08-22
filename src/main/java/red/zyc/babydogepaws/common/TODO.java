@@ -31,10 +31,6 @@ public class TODO {
 
     /**
      * <ol>
-     *     <li>初始化时，不是所有用户都需要登录一下tg获取授权参数，
-     *     如果游戏登录信息表中，登录记录的修改时间没有超过1天的话（游戏那边好像是1天过期），
-     *     直接用上次的授权参数进行授权就行
-     *     </li>
      *     <li>
      *         同一个用户执行{@link BabyDogePawsApi#authorize(Account)}方法应该与其它方法互斥，
      *         因为其它方法都是依赖与authorize方法返回的access_token
