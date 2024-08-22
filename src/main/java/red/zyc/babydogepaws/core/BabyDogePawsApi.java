@@ -9,9 +9,9 @@ import red.zyc.babydogepaws.common.util.Https;
 import red.zyc.babydogepaws.common.util.Mails;
 import red.zyc.babydogepaws.exception.BabyDogePawsApiException;
 import red.zyc.babydogepaws.exception.BabyDogePawsException;
+import red.zyc.babydogepaws.model.Account;
 import red.zyc.babydogepaws.model.PickChannel;
 import red.zyc.babydogepaws.model.UpgradeCard;
-import red.zyc.babydogepaws.model.Account;
 import red.zyc.babydogepaws.model.request.MineRequestParam;
 import red.zyc.babydogepaws.model.request.PickChannelRequestParam;
 import red.zyc.babydogepaws.model.request.UpgradeCardRequestParam;
@@ -40,7 +40,7 @@ public class BabyDogePawsApi {
      * 如果x-api-key过期的话则需要重新授权一下
      *
      * @param account {@link Account}
-     * @param code http响应码
+     * @param code    http响应码
      */
     private void reAuthorizeIfNecessary(Account account, int code) {
         if (code == 401) {
@@ -197,7 +197,7 @@ public class BabyDogePawsApi {
     /**
      * 升级卡片
      *
-     * @param account        {@link Account}
+     * @param account     {@link Account}
      * @param upgradeCard {@link UpgradeCard}
      * @return 卡片升级后的信息，其中包括用户信息和升级后的所有卡片信息
      */
@@ -225,8 +225,8 @@ public class BabyDogePawsApi {
     /**
      * 挖矿
      *
-     * @param account  {@link Account}
-     * @param param {@link MineRequestParam}
+     * @param account {@link Account}
+     * @param param   {@link MineRequestParam}
      * @return 挖矿后的信息
      */
     public Map<String, Object> mine(Account account, MineRequestParam param) {
@@ -279,7 +279,7 @@ public class BabyDogePawsApi {
     /**
      * 采集任务奖励
      *
-     * @param account        {@link Account}
+     * @param account     {@link Account}
      * @param pickChannel {@link PickChannel}
      * @return 采集任务奖励响应
      */
@@ -340,7 +340,8 @@ public class BabyDogePawsApi {
     public Map<String, Object> getPromo(Account account) {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://backend.babydogepawsbot.com/promo"))
-                .header("x-api-key", account.xApiKey()).GET()
+                .header("x-api-key", account.xApiKey())
+                .GET()
                 .build();
         return CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApply((response) -> {

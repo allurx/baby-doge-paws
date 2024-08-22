@@ -27,13 +27,12 @@ public class Account {
         this.chromeDataDir = chromeRootDataDir + chromeDataDirName;
     }
 
-
     public String xApiKey() {
         return getUserProperty("access_token", Object::toString, "");
     }
 
     public <T> T getUserProperty(String property, Function<Object, T> converter, T defaultValue) {
-        return Optional.ofNullable(this.data)
+        return Optional.ofNullable(data)
                 .map(o -> o.get(property))
                 .map(o -> Functions.convert(o, converter, defaultValue))
                 .orElse(defaultValue);
