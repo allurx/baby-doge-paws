@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.core.BabyDogePawsApi;
-import red.zyc.babydogepaws.model.User;
+import red.zyc.babydogepaws.model.Account;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -36,12 +36,8 @@ public class TODO {
      *     直接用上次的授权参数进行授权就行
      *     </li>
      *     <li>
-     *         同一个用户执行{@link BabyDogePawsApi#authorize(User)}方法应该与其它方法互斥，
+     *         同一个用户执行{@link BabyDogePawsApi#authorize(Account)}方法应该与其它方法互斥，
      *         因为其它方法都是依赖与authorize方法返回的access_token
-     *     </li>
-     *     <li>
-     *         添加一个game_user_config表，标记读取游戏用户时哪些用户不需要进行自动化，
-     *         一些重要的账户暂时还是手动操作比较好
      *     </li>
      *     <li>
      *         {@link Poller#pollWhenMiss(Supplier)}优化

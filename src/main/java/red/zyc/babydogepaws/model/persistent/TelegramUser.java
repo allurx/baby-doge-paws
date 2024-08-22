@@ -5,17 +5,16 @@ import java.time.LocalDateTime;
 /**
  * @author allurx
  */
-public record TelegramUser(
+public class TelegramUser {
 
-        Integer id,
-        String country,
-        String areaCode,
-        String phoneNumber,
-        Integer source,
-        Integer banned,
-        Integer passwordReset,
-        Integer emailReset,
-        LocalDateTime createdTime,
-        LocalDateTime modifiedTime
-) {
+    public Integer id;
+    public String country;
+    public String areaCode;
+    public String phoneNumber;
+    public Integer source;
+    public Integer banned;
+    public Integer passwordReset;
+    public Integer emailReset;
+    public LocalDateTime createdTime;
+    public LocalDateTime modifiedTime;
 }

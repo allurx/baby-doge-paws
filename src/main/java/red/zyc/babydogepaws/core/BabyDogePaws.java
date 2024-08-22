@@ -17,7 +17,7 @@ import red.zyc.babydogepaws.common.util.Mails;
 import red.zyc.babydogepaws.dao.GameLoginInfoMapper;
 import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsException;
-import red.zyc.babydogepaws.model.User;
+import red.zyc.babydogepaws.model.Account;
 import red.zyc.babydogepaws.model.persistent.GameLoginInfo;
 import red.zyc.babydogepaws.selenium.BabyDogePawsContext;
 import red.zyc.babydogepaws.selenium.BabyDogePawsContextItem;
@@ -37,8 +37,7 @@ import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import static red.zyc.toolkit.json.Json.JACKSON_OPERATOR;
+import java.util.function.Predicate;
 
 /**
  * @author allurx
@@ -51,11 +50,11 @@ public class BabyDogePaws {
     private static final List<String> AUTH_PARAM_NAMES = List.of("query_id", "user", "auth_date", "hash");
     private static final String BABY_DOGE_PAWS_AUTH_PARAMS_LOCATION_PREFIX = "https://babydogeclikerbot.com/#tgWebAppData=";
     private static final ThreadPoolExecutor BOOTSTRAP_SERVICE = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("Bootstrap", false));
-    private static final List<String> IGNORED_USER = List.of("86-19962006575", "1-8502950634");
 
     private final UserMapper userMapper;
     private final GameLoginInfoMapper gameLoginInfoMapper;
     private final BabyDogePawsTask babyDogePawsTask;
+    private final Predicate<Account> bootStrapAccountPredicate = account -> account.name.equals("19962006575") || account.name.equals("8502950634");
 
     @Value("${chrome.root-data-dir}")
     private String chromeRootDataDir;
@@ -69,30 +68,23 @@ public class BabyDogePaws {
     }
 
     public void bootstrap() {
-        userMapper.listTelegramUsers()
+        userMapper.listBabyDogeUsers()
                 .stream()
-                .filter(user -> user.banned() == 0)
-                .filter(user -> !IGNORED_USER.contains(user.areaCode() + "-" + user.phoneNumber()))
-                .forEach(user -> bootstrap(new User(user, chromeRootDataDir), 0));
+                .map(user -> new Account(user, chromeRootDataDir))
+                .forEach(account -> bootstrap(account, 0));
     }
 
-    private void bootstrap(User user, int failNum) {
-        BOOTSTRAP_SERVICE.execute(() -> {
-                    if (playBabyDogePaws(user, failNum)) {
-                        babyDogePawsTask.scheduleAuthorize(user);
-                        babyDogePawsTask.schedulePickDailyBonus(user);
-                        babyDogePawsTask.schedulePickPromo(user);
-                        babyDogePawsTask.scheduleMine(user);
-                        babyDogePawsTask.scheduleUpgradeCard(user);
-                    }
-                }
-        );
+    private void bootstrap(Account account, int failNum) {
+        BOOTSTRAP_SERVICE.execute(() ->
+                Optional.ofNullable(account.user.authParam)
+                        .ifPresentOrElse(s -> babyDogePawsTask.schedule(account),
+                                () -> playBabyDogePaws(account, failNum)));
     }
 
-    public boolean playBabyDogePaws(User user, int failNum) {
+    public void playBabyDogePaws(Account account, int failNum) {
         try {
             LocalDateTime startTime = LocalDateTime.now();
-            ChromeSupport.startChromeProcess(user.chromeDataDir);
+            ChromeSupport.startChromeProcess(account.chromeDataDir);
             WebDriver webDriver = ChromeSupport.startChromeDriver();
             webDriver.get(TELEGRAM_WEB_URL);
             FluentWait<WebDriver> waiter = new WebDriverWait(webDriver, Duration.ofSeconds(30L), Duration.ofSeconds(1L));
@@ -142,26 +134,30 @@ public class BabyDogePaws {
                     .describeConstable()
                     .orElseThrow(() -> new BabyDogePawsException("BabyDogePaws授权参数为null"));
 
-            user.authParam = authParam;
-            LOGGER.info("[获取授权参数成功]-{}:{}", user.name, authParam);
+            int duration = (int) startTime.until(LocalDateTime.now(), ChronoUnit.SECONDS);
+            account.user.authParam = authParam;
 
-            // 成功获取到authParam后调用一下游戏的授权接口获取x-api-key
-            babyDogePawsTask.authorizeOnceImmediately(user);
-            String userJsonData = JACKSON_OPERATOR.toJsonString(user.data);
-            LOGGER.info("[游戏登录成功]-{}:{}", user.name, userJsonData);
-            return gameLoginInfoMapper.saveOrUpdateGameLoginInfo(new GameLoginInfo(user.user.id(), user.authParam, (int) startTime.until(LocalDateTime.now(), ChronoUnit.SECONDS))) == 1;
+            // 启动所有定时任务
+            babyDogePawsTask.schedule(account);
+
+            // 保存登录信息
+            gameLoginInfoMapper.saveOrUpdateGameLoginInfo(new GameLoginInfo(account.user.id, account.user.authParam, duration));
+
+            LOGGER.info("[游戏登录成功]-{}:{}", account.name, authParam);
+
         } catch (Throwable t) {
 
             int currentFailNum = ++failNum;
-            LOGGER.error(String.format("[游戏登录失败]-%s-%s:", user.name, currentFailNum), t);
+            LOGGER.error(String.format("[游戏登录失败]-%s-%s:", account.name, currentFailNum), t);
 
             // 游戏登录失败6次放弃
             if (currentFailNum == 6) {
-                Mails.sendTextMail(user.name + "游戏登录失败", Commons.convertThrowableToString(t));
+                Mails.sendTextMail(account.name + "游戏登录失败", Commons.convertThrowableToString(t));
             } else {
-                bootstrap(user, currentFailNum);
+
+                // 继续丢到线程池的任务队列中排队执行，默认的就是FIFO队列
+                bootstrap(account, currentFailNum);
             }
-            return false;
         } finally {
             Optional.ofNullable(BabyDogePawsContext.<WebDriver>get(BabyDogePawsContextItem.WEB_DRIVER)).ifPresent(WebDriver::quit);
             Optional.ofNullable(BabyDogePawsContext.<Process>get(BabyDogePawsContextItem.CHROME_PROCESS)).ifPresent(Process::destroy);
