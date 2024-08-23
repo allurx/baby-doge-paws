@@ -17,8 +17,9 @@ import red.zyc.babydogepaws.common.util.Mails;
 import red.zyc.babydogepaws.dao.GameLoginInfoMapper;
 import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsException;
-import red.zyc.babydogepaws.model.Account;
+import red.zyc.babydogepaws.model.BabyDogePawsAccount;
 import red.zyc.babydogepaws.model.persistent.GameLoginInfo;
+import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.selenium.BabyDogePawsContext;
 import red.zyc.babydogepaws.selenium.BabyDogePawsContextItem;
 import red.zyc.babydogepaws.selenium.ChromeSupport;
@@ -54,7 +55,7 @@ public class BabyDogePaws {
     private final UserMapper userMapper;
     private final GameLoginInfoMapper gameLoginInfoMapper;
     private final BabyDogePawsTask babyDogePawsTask;
-    private final Predicate<Account> bootStrapAccountPredicate = account -> account.name.equals("19962006575") || account.name.equals("8502950634");
+    private final Predicate<BabyDogePawsAccount> bootStrapAccountPredicate = account -> account.name.equals("19962006575") || account.name.equals("8502950634");
 
     @Value("${chrome.root-data-dir}")
     private String chromeRootDataDir;
@@ -70,18 +71,18 @@ public class BabyDogePaws {
     public void bootstrap() {
         userMapper.listBabyDogeUsers()
                 .stream()
-                .map(user -> new Account(user, chromeRootDataDir))
+                .map(user -> new BabyDogePawsAccount(user, chromeRootDataDir))
                 .forEach(account -> bootstrap(account, 0));
     }
 
-    private void bootstrap(Account account, int failNum) {
+    private void bootstrap(BabyDogePawsAccount account, int failNum) {
         BOOTSTRAP_SERVICE.execute(() ->
                 Optional.ofNullable(account.user.authParam)
-                        .ifPresentOrElse(s -> babyDogePawsTask.schedule(account),
+                        .ifPresentOrElse(s -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(account)),
                                 () -> playBabyDogePaws(account, failNum)));
     }
 
-    public void playBabyDogePaws(Account account, int failNum) {
+    public void playBabyDogePaws(BabyDogePawsAccount account, int failNum) {
         try {
             LocalDateTime startTime = LocalDateTime.now();
             ChromeSupport.startChromeProcess(account.chromeDataDir);
@@ -138,7 +139,7 @@ public class BabyDogePaws {
             account.user.authParam = authParam;
 
             // 启动所有定时任务
-            babyDogePawsTask.schedule(account);
+            babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(account));
 
             // 保存登录信息
             gameLoginInfoMapper.saveOrUpdateGameLoginInfo(new GameLoginInfo(account.user.id, account.user.authParam, duration));

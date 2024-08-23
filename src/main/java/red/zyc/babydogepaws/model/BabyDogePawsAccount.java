@@ -12,15 +12,16 @@ import java.util.function.Function;
  *
  * @author allurx
  */
-public class Account {
+public class BabyDogePawsAccount {
 
     public final BabyDogePawsUser user;
     public final String name;
     public final String chromeDataDir;
     public final String chromeDataDirName;
-    public volatile Map<String, Object> data;
+    public Map<String, Object> data;
+    public boolean dataValid;
 
-    public Account(BabyDogePawsUser user, String chromeRootDataDir) {
+    public BabyDogePawsAccount(BabyDogePawsUser user, String chromeRootDataDir) {
         this.user = user;
         this.name = user.phoneNumber;
         this.chromeDataDirName = user.areaCode + "-" + user.phoneNumber;

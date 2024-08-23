@@ -4,10 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.common.NamedThreadFactory;
-import red.zyc.babydogepaws.model.Account;
-import red.zyc.babydogepaws.model.PickChannel;
-import red.zyc.babydogepaws.model.UpgradeCard;
-import red.zyc.babydogepaws.model.request.MineRequestParam;
+import red.zyc.babydogepaws.model.BabyDogePawsAccount;
+import red.zyc.babydogepaws.model.request.PickChannel;
+import red.zyc.babydogepaws.model.request.UpgradeCard;
+import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.model.response.Card;
 import red.zyc.babydogepaws.model.response.Channel;
 
@@ -52,45 +52,34 @@ public class BabyDogePawsTask {
     /**
      * 调度所有定时任务
      *
-     * @param account {@link Account}
+     * @param param {@link BabyDogePawsGameRequestParam}
      */
-    public void schedule(Account account) {
-        authorizeOnceImmediately(account);
-        scheduleAuthorize(account);
-        schedulePickDailyBonus(account);
-        schedulePickPromo(account);
-        scheduleMine(account);
-        scheduleUpgradeCard(account);
-    }
-
-    /**
-     * 成功获取到authParam后立刻调用一下游戏的授权接口获取x-api-key
-     *
-     * @param account {@link Account}
-     * @return 用户信息
-     */
-    public Map<String, Object> authorizeOnceImmediately(Account account) {
-        return babyDogePawsApi.authorize(account);
+    public void schedule(BabyDogePawsGameRequestParam param) {
+        scheduleAuthorize(param);
+        schedulePickDailyBonus(param);
+        schedulePickPromo(param);
+        scheduleMine(param);
+        scheduleUpgradeCard(param);
     }
 
     /**
      * 每隔1小时授权一次，确保游戏处于活跃状态，以便能够持续产生利润
      *
-     * @param account {@link Account}
+     * @param param {@link BabyDogePawsGameRequestParam}
      */
-    private void scheduleAuthorize(Account account) {
-        BABY_DOGE_PAWS_AUTH.scheduleAtFixedRate(safeRunnable(() -> babyDogePawsApi.authorize(account)), 1L, 1L, TimeUnit.HOURS);
+    private void scheduleAuthorize(BabyDogePawsGameRequestParam param) {
+        BABY_DOGE_PAWS_AUTH.scheduleAtFixedRate(safeRunnable(() -> babyDogePawsApi.authorize(param)), 0L, 1L, TimeUnit.HOURS);
     }
 
     /**
      * 定时采集当天每日奖励
      *
-     * @param account {@link Account}
+     * @param param {@link BabyDogePawsGameRequestParam}
      */
-    private void schedulePickDailyBonus(Account account) {
+    private void schedulePickDailyBonus(BabyDogePawsGameRequestParam param) {
         BABY_DOGE_PAWS_SUCCESS_ONCE_TASK.scheduleAtFixedRate(safeRunnable(() -> {
-            if ((boolean) babyDogePawsApi.getDailyBonuses(account).getOrDefault("has_available", false)) {
-                babyDogePawsApi.pickDailyBonus(account);
+            if ((boolean) babyDogePawsApi.getDailyBonuses(param).getOrDefault("has_available", false)) {
+                babyDogePawsApi.pickDailyBonus(param);
             }
         }), 0L, 1L, TimeUnit.HOURS);
     }
@@ -98,12 +87,12 @@ public class BabyDogePawsTask {
     /**
      * 定时采集促销奖励
      *
-     * @param account {@link Account}
+     * @param param {@link BabyDogePawsGameRequestParam}
      */
-    private void schedulePickPromo(Account account) {
+    private void schedulePickPromo(BabyDogePawsGameRequestParam param) {
         BABY_DOGE_PAWS_SUCCESS_ONCE_TASK.scheduleAtFixedRate(safeRunnable(() -> {
-            if (!(boolean) babyDogePawsApi.getPromo(account).getOrDefault("is_reward_taken", true)) {
-                babyDogePawsApi.pickPromo(account);
+            if (!(boolean) babyDogePawsApi.getPromo(param).getOrDefault("is_reward_taken", true)) {
+                babyDogePawsApi.pickPromo(param);
             }
         }), 0L, 1L, TimeUnit.HOURS);
     }
@@ -111,46 +100,45 @@ public class BabyDogePawsTask {
     /**
      * 定时挖矿
      *
-     * @param account {@link Account}
+     * @param param {@link BabyDogePawsGameRequestParam}
      */
-    private void scheduleMine(Account account) {
-        BABY_DOGE_PAWS_MINER.scheduleAtFixedRate(safeRunnable(() ->
-                        babyDogePawsApi.mine(account, new MineRequestParam(account.mineCount()))),
-                0L, account.mineInterval(), TimeUnit.SECONDS);
+    private void scheduleMine(BabyDogePawsGameRequestParam param) {
+        BABY_DOGE_PAWS_MINER.scheduleAtFixedRate(safeRunnable(() -> babyDogePawsApi.mine(param)),
+                0L, param.account.mineInterval(), TimeUnit.SECONDS);
     }
 
     /**
      * 定时升级卡片
      *
-     * @param account {@link Account}
+     * @param param {@link BabyDogePawsGameRequestParam}
      */
-    private void scheduleUpgradeCard(Account account) {
+    private void scheduleUpgradeCard(BabyDogePawsGameRequestParam param) {
         BABY_DOGE_PAWS_UPGRADE_CARD.scheduleAtFixedRate(safeRunnable(() -> {
-            BigDecimal balance = new BigDecimal(babyDogePawsApi.getMe(account).getOrDefault("balance", BigDecimal.ZERO).toString());
-            List<Map<String, Object>> cards = babyDogePawsApi.listCards(account);
-            upgradeCard(account, balance, cards);
+            BigDecimal balance = new BigDecimal(babyDogePawsApi.getMe(param).getOrDefault("balance", BigDecimal.ZERO).toString());
+            List<Map<String, Object>> cards = babyDogePawsApi.listCards(param);
+            upgradeCard(param.account, balance, cards);
         }), 0L, 3L, TimeUnit.MINUTES);
     }
 
     /**
      * 定时采集任务奖励
      *
-     * @param account {@link Account}
+     * @param param {@link BabyDogePawsGameRequestParam}
      */
-    public void schedulePickChannel(Account account) {
+    public void schedulePickChannel(BabyDogePawsGameRequestParam param) {
         BABY_DOGE_PAWS_SUCCESS_ONCE_TASK.scheduleAtFixedRate(safeRunnable(() -> {
             @SuppressWarnings("unchecked")
-            var channels = (List<Map<String, Object>>) babyDogePawsApi.listChannels(account).getOrDefault("channels", new ArrayList<>());
+            var channels = (List<Map<String, Object>>) babyDogePawsApi.listChannels(param).getOrDefault("channels", new ArrayList<>());
             channels.stream().parallel()
                     .map(channel -> new Channel(channel.get("id").toString(), channel.get("invite_link").toString(), (boolean) channel.get("is_available")))
                     .filter(Channel::isAvailable)
-                    .forEach((channel) -> inviteLink(channel.inviteLink())
-                            .ifPresent((uri) -> CLIENT.sendAsync(HttpRequest.newBuilder().uri(uri).GET().build(), HttpResponse.BodyHandlers.discarding()).thenAccept((response) -> {
+                    .forEach(channel -> inviteLink(channel.inviteLink())
+                            .ifPresent((uri) -> CLIENT.sendAsync(HttpRequest.newBuilder().uri(uri).GET().build(), HttpResponse.BodyHandlers.discarding()).thenAccept(response -> {
                                 LOGGER.info("[点击邀请链接响应成功]:{}", channel.inviteLink());
-                                babyDogePawsApi.pickChannel(account, new PickChannel(channel));
-                            }).exceptionally((t) -> {
+                                babyDogePawsApi.pickChannel(new PickChannel(param.account, channel));
+                            }).exceptionally(t -> {
                                 LOGGER.error("[点击邀请链接响应失败]:{}", channel.inviteLink(), t);
-                                babyDogePawsApi.pickChannel(account, new PickChannel(channel));
+                                babyDogePawsApi.pickChannel(new PickChannel(param.account, channel));
                                 return null;
                             }).join()));
         }), 0L, 1L, TimeUnit.HOURS);
@@ -163,7 +151,7 @@ public class BabyDogePawsTask {
      * @param cards   卡片列表
      */
     @SuppressWarnings("unchecked")
-    private void upgradeCard(Account account, BigDecimal balance, List<Map<String, Object>> cards) {
+    private void upgradeCard(BabyDogePawsAccount account, BigDecimal balance, List<Map<String, Object>> cards) {
         if (!IGNORED_USER.contains(account.chromeDataDirName) && balance.compareTo(BigDecimal.valueOf(10000000L)) <= 0) {
             cards.stream().flatMap((o) -> ((List<Map<String, Object>>) o.get("cards")).stream())
                     .filter((o) -> (Boolean) o.get("is_available"))
@@ -172,7 +160,7 @@ public class BabyDogePawsTask {
                     .map((card) -> new Card((Integer) card.get("id"), new BigDecimal(card.get("upgrade_cost").toString())))
                     .findFirst().ifPresent((card) -> {
                         if (balance.compareTo(card.upgradeCost()) >= 0) {
-                            var map = babyDogePawsApi.upgradeCard(account, new UpgradeCard(balance, card));
+                            var map = babyDogePawsApi.upgradeCard(new UpgradeCard(account, balance, card));
                             var latestBalance = new BigDecimal(map.getOrDefault("balance", BigDecimal.ZERO).toString());
                             var latestCards = (List<Map<String, Object>>) map.getOrDefault("cards", new ArrayList<>());
                             upgradeCard(account, latestBalance, latestCards);
