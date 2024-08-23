@@ -14,12 +14,14 @@ import java.util.function.Function;
  */
 public class BabyDogePawsAccount {
 
+    private static final int DEFAULT_MINE_INTERVAL = Math.ceilDiv(3000, 4);
+    private static final int DEFAULT_MINE_COUNT = Math.ceilDiv(3000, 4);
     public final BabyDogePawsUser user;
     public final String name;
     public final String chromeDataDir;
     public final String chromeDataDirName;
     public Map<String, Object> data;
-    public boolean dataValid;
+    public volatile boolean dataValid = false;
 
     public BabyDogePawsAccount(BabyDogePawsUser user, String chromeRootDataDir) {
         this.user = user;
@@ -40,14 +42,16 @@ public class BabyDogePawsAccount {
     }
 
     public int mineInterval() {
-        int maxEnergy = getUserProperty("max_energy", o -> Integer.parseInt(o.toString()), 4);
-        return Math.ceilDiv(maxEnergy, 4);
+        int maxEnergy = getUserProperty("max_energy", o -> Integer.parseInt(o.toString()), 3000);
+        int interval = Math.ceilDiv(maxEnergy, 4);
+        return interval <= 1 ? DEFAULT_MINE_INTERVAL : interval;
     }
 
     public int mineCount() {
-        int maxEnergy = getUserProperty("max_energy", o -> Integer.parseInt(o.toString()), 4);
+        int maxEnergy = getUserProperty("max_energy", o -> Integer.parseInt(o.toString()), 3000);
         int earnPerTap = getUserProperty("earn_per_tap", o -> Integer.parseInt(o.toString()), 4);
-        return Math.ceilDiv(maxEnergy, earnPerTap);
+        int count = Math.ceilDiv(maxEnergy, earnPerTap);
+        return count <= 1 ? DEFAULT_MINE_COUNT : count;
     }
 
 }

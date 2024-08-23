@@ -5,9 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.common.NamedThreadFactory;
 import red.zyc.babydogepaws.model.BabyDogePawsAccount;
+import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.model.request.PickChannel;
 import red.zyc.babydogepaws.model.request.UpgradeCard;
-import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.model.response.Card;
 import red.zyc.babydogepaws.model.response.Channel;
 
@@ -55,6 +55,11 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     public void schedule(BabyDogePawsGameRequestParam param) {
+
+        // 初始化用户数据，因为有些定时任务需要使用到用户数据，所以这里最好提前初始化一下，虽然影响不大
+        babyDogePawsApi.authorize(param);
+
+        // 启动所有定时任务
         scheduleAuthorize(param);
         schedulePickDailyBonus(param);
         schedulePickPromo(param);
@@ -68,7 +73,7 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     private void scheduleAuthorize(BabyDogePawsGameRequestParam param) {
-        BABY_DOGE_PAWS_AUTH.scheduleAtFixedRate(safeRunnable(() -> babyDogePawsApi.authorize(param)), 0L, 1L, TimeUnit.HOURS);
+        BABY_DOGE_PAWS_AUTH.scheduleAtFixedRate(safeRunnable(() -> babyDogePawsApi.authorize(param)), 1L, 1L, TimeUnit.HOURS);
     }
 
     /**
