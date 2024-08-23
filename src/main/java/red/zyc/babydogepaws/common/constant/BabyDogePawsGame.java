@@ -1,5 +1,6 @@
 package red.zyc.babydogepaws.common.constant;
 
+import red.zyc.babydogepaws.model.BabyDogePawsAccount;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.model.request.PickChannel;
 import red.zyc.babydogepaws.model.request.UpgradeCard;
@@ -95,7 +96,7 @@ public final class BabyDogePawsGame {
                         .uri(URI.create("https://backend.babydogepawsbot.com/mine"))
                         .header("content-type", "application/json")
                         .header(X_API_KEY, param.account.xApiKey())
-                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("count", param.account.mineCount()))))
+                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("count", BabyDogePawsAccount.MINE_COUNT))))
                         .build();
             }
         },

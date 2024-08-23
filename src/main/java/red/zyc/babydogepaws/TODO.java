@@ -40,6 +40,9 @@ public class TODO {
      *     <li>
      *         {@link Poller#pollWhenMiss(Supplier)}优化
      *     </li>
+     *     <li>
+     *         优化挖矿间隔和次数计算逻辑
+     *     </li>
      * </ol>
      */
     public TODO() {

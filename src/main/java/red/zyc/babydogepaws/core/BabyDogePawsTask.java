@@ -42,7 +42,6 @@ public class BabyDogePawsTask {
     private static final ScheduledExecutorService BABY_DOGE_PAWS_MINER = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("BabyDogePawsMiner", true));
     private static final ScheduledExecutorService BABY_DOGE_PAWS_UPGRADE_CARD = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("BabyDogePawsUpgradeCard", true));
     private static final ScheduledExecutorService BABY_DOGE_PAWS_SUCCESS_ONCE_TASK = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("BabyDogePawsSuccessOnceTask", true));
-    private static final List<String> IGNORED_USER = List.of("86-19962006575", "1-8502950634");
     private final BabyDogePawsApi babyDogePawsApi;
 
     public BabyDogePawsTask(BabyDogePawsApi babyDogePawsApi) {
@@ -50,16 +49,11 @@ public class BabyDogePawsTask {
     }
 
     /**
-     * 调度所有定时任务
+     * 启动所有定时任务
      *
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     public void schedule(BabyDogePawsGameRequestParam param) {
-
-        // 初始化用户数据，因为有些定时任务需要使用到用户数据，所以这里最好提前初始化一下，虽然影响不大
-        babyDogePawsApi.authorize(param);
-
-        // 启动所有定时任务
         scheduleAuthorize(param);
         schedulePickDailyBonus(param);
         schedulePickPromo(param);
@@ -73,7 +67,7 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     private void scheduleAuthorize(BabyDogePawsGameRequestParam param) {
-        BABY_DOGE_PAWS_AUTH.scheduleAtFixedRate(safeRunnable(() -> babyDogePawsApi.authorize(param)), 1L, 1L, TimeUnit.HOURS);
+        BABY_DOGE_PAWS_AUTH.scheduleAtFixedRate(safeRunnable(() -> babyDogePawsApi.authorize(param)), 0L, 1L, TimeUnit.HOURS);
     }
 
     /**
@@ -109,7 +103,7 @@ public class BabyDogePawsTask {
      */
     private void scheduleMine(BabyDogePawsGameRequestParam param) {
         BABY_DOGE_PAWS_MINER.scheduleAtFixedRate(safeRunnable(() -> babyDogePawsApi.mine(param)),
-                0L, param.account.mineInterval(), TimeUnit.SECONDS);
+                0L, BabyDogePawsAccount.MINE_INTERVAL, TimeUnit.SECONDS);
     }
 
     /**
@@ -157,25 +151,30 @@ public class BabyDogePawsTask {
      */
     @SuppressWarnings("unchecked")
     private void upgradeCard(BabyDogePawsAccount account, BigDecimal balance, List<Map<String, Object>> cards) {
-        if (!IGNORED_USER.contains(account.chromeDataDirName) && balance.compareTo(BigDecimal.valueOf(10000000L)) <= 0) {
-            cards.stream().flatMap((o) -> ((List<Map<String, Object>>) o.get("cards")).stream())
-                    .filter((o) -> (Boolean) o.get("is_available"))
-                    .sorted(Comparator.<Map<String, Object>, BigDecimal>comparing((card) -> (new BigDecimal(card.get("upgrade_cost").toString())).divide(new BigDecimal(card.get("farming_upgrade").toString()), 0, RoundingMode.HALF_UP))
-                            .thenComparing((card) -> new BigDecimal(card.get("upgrade_cost").toString())))
-                    .map((card) -> new Card((Integer) card.get("id"), new BigDecimal(card.get("upgrade_cost").toString())))
-                    .findFirst().ifPresent((card) -> {
-                        if (balance.compareTo(card.upgradeCost()) >= 0) {
-                            var map = babyDogePawsApi.upgradeCard(new UpgradeCard(account, balance, card));
-                            var latestBalance = new BigDecimal(map.getOrDefault("balance", BigDecimal.ZERO).toString());
-                            var latestCards = (List<Map<String, Object>>) map.getOrDefault("cards", new ArrayList<>());
-                            upgradeCard(account, latestBalance, latestCards);
-                        }
-                    });
-        }
-
+        cards.stream().flatMap(o -> ((List<Map<String, Object>>) o.get("cards")).stream())
+                .filter(o -> (Boolean) o.get("is_available"))
+                .sorted(Comparator.<Map<String, Object>, BigDecimal>comparing(card -> new BigDecimal(card.get("upgrade_cost").toString()).divide(new BigDecimal(card.get("farming_upgrade").toString()), 2, RoundingMode.HALF_UP))
+                        .thenComparing(card -> new BigDecimal(card.get("upgrade_cost").toString())))
+                .map(card -> new Card((Integer) card.get("id"), new BigDecimal(card.get("upgrade_cost").toString()), new BigDecimal(card.get("farming_upgrade").toString())))
+                .findFirst()
+                .ifPresent(card -> {
+                    if (canUpgradeCard(balance, card)) {
+                        var map = babyDogePawsApi.upgradeCard(new UpgradeCard(account, balance, card));
+                        var latestBalance = new BigDecimal(map.getOrDefault("balance", BigDecimal.ZERO).toString());
+                        var latestCards = (List<Map<String, Object>>) map.getOrDefault("cards", new ArrayList<>());
+                        upgradeCard(account, latestBalance, latestCards);
+                    }
+                });
     }
 
-    private static Optional<URI> inviteLink(String link) {
+    private boolean canUpgradeCard(BigDecimal balance, Card card) {
+        var price = card.upgradeCost().divide(card.farmingUpgrade(), 2, RoundingMode.HALF_UP);
+        return balance.compareTo(card.upgradeCost()) >= 0 &&
+                price.compareTo(BigDecimal.valueOf(1517.26)) < 0 &&
+                card.upgradeCost().compareTo(BigDecimal.valueOf(10000000)) <= 0;
+    }
+
+    private Optional<URI> inviteLink(String link) {
         try {
             URI uri = new URI(link);
             String scheme = uri.getScheme();
