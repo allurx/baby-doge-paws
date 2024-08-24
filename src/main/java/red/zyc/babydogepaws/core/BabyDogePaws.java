@@ -70,7 +70,6 @@ public class BabyDogePaws {
         userMapper.listBabyDogeUsers()
                 .stream()
                 .map(user -> new BabyDogePawsAccount(user, chromeRootDataDir))
-                .filter(bootStrapAccountPredicate)
                 .forEach(account -> bootstrap(account, 0));
     }
 
