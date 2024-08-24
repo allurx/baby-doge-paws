@@ -74,7 +74,7 @@ public class Poller<A, B> {
      * @return duration内满足predicate的function执行结果
      * @throws X Throwable
      */
-    public <X extends Throwable> Optional<B> pollWhenMiss(Supplier<? extends X> exceptionSupplier) throws X {
+    public <X extends Throwable> Optional<B> throwWhenMiss(Supplier<? extends X> exceptionSupplier) throws X {
         B r;
         long durationNanoTime = TimeUnit.NANOSECONDS.convert(this.duration, this.timeUnit);
         long intervalNanoTime = TimeUnit.NANOSECONDS.convert(this.interval, this.timeUnit);

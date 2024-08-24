@@ -20,8 +20,8 @@ public class BabyDogePawsAccount {
     public final String name;
     public final String chromeDataDir;
     public final String chromeDataDirName;
-    public Map<String, Object> data;
-    public boolean dataValid = false;
+    public volatile Map<String, Object> data;
+    public volatile boolean dataValid = false;
 
     public BabyDogePawsAccount(BabyDogePawsUser user, String chromeRootDataDir) {
         this.user = user;

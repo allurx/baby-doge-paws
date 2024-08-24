@@ -38,7 +38,7 @@ public class TODO {
      *         是否可以复用一个webdriver
      *     </li>
      *     <li>
-     *         {@link Poller#pollWhenMiss(Supplier)}优化
+     *         {@link Poller#throwWhenMiss(Supplier)}优化
      *     </li>
      *     <li>
      *         优化挖矿间隔和次数计算逻辑

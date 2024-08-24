@@ -23,7 +23,7 @@
 		<maven.compiler.target>21</maven.compiler.target>
 		<mybatis-spring-boot-starter.version>3.0.3</mybatis-spring-boot-starter.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<selenium-java.version>4.23.0</selenium-java.version>
+		<red.zyc.selenium.version>1.0.0</red.zyc.selenium.version>
 	</properties>
 
 	<dependencies>
@@ -33,14 +33,14 @@
 			<version>${kit-json.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>red.zyc</groupId>
+			<artifactId>selenium</artifactId>
+			<version>${red.zyc.selenium.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-email</artifactId>
 			<version>${commons-email.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.seleniumhq.selenium</groupId>
-			<artifactId>selenium-java</artifactId>
-			<version>${selenium-java.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

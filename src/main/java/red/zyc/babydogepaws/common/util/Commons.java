@@ -46,4 +46,14 @@ public final class Commons {
             }
         };
     }
+
+    /**
+     * 判断字符串是否为空
+     *
+     * @param str 字符串
+     * @return 字符串是否为空
+     */
+    public static boolean isEmpty(String str) {
+        return str == null || str.isEmpty();
+    }
 }

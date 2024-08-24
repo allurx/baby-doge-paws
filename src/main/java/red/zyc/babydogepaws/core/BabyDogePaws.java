@@ -20,11 +20,10 @@ import red.zyc.babydogepaws.exception.BabyDogePawsException;
 import red.zyc.babydogepaws.model.BabyDogePawsAccount;
 import red.zyc.babydogepaws.model.persistent.GameLoginInfo;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
-import red.zyc.babydogepaws.selenium.BabyDogePawsContext;
-import red.zyc.babydogepaws.selenium.BabyDogePawsContextItem;
-import red.zyc.babydogepaws.selenium.ChromeSupport;
 import red.zyc.babydogepaws.selenium.ElementPosition;
 import red.zyc.babydogepaws.selenium.Javascript;
+import red.zyc.selenium.browser.Chrome;
+import red.zyc.selenium.browser.Mode;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -34,7 +33,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -72,21 +70,28 @@ public class BabyDogePaws {
         userMapper.listBabyDogeUsers()
                 .stream()
                 .map(user -> new BabyDogePawsAccount(user, chromeRootDataDir))
+                .filter(bootStrapAccountPredicate)
                 .forEach(account -> bootstrap(account, 0));
     }
 
     private void bootstrap(BabyDogePawsAccount account, int failNum) {
-        BOOTSTRAP_SERVICE.execute(() ->
-                Optional.ofNullable(account.user.authParam)
-                        .ifPresentOrElse(s -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(account)),
-                                () -> playBabyDogePaws(account, failNum)));
+        BOOTSTRAP_SERVICE.execute(() -> {
+            if (Commons.isEmpty(account.user.authParam)) {
+                playBabyDogePaws(account, failNum);
+            } else {
+                babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(account));
+            }
+        });
     }
 
     public void playBabyDogePaws(BabyDogePawsAccount account, int failNum) {
-        try {
+        try (Chrome chrome = Chrome.builder()
+                .mode(Mode.ATTACH)
+                .addArgs("--user-data-dir=" + account.chromeDataDir, "--headless=new")
+                .build()) {
+
             LocalDateTime startTime = LocalDateTime.now();
-            ChromeSupport.startChromeProcess(account.chromeDataDir);
-            WebDriver webDriver = ChromeSupport.startChromeDriver();
+            WebDriver webDriver = chrome.webDriver();
             webDriver.get(TELEGRAM_WEB_URL);
             FluentWait<WebDriver> waiter = new WebDriverWait(webDriver, Duration.ofSeconds(30L), Duration.ofSeconds(1L));
             JavascriptExecutor executor = (JavascriptExecutor) webDriver;
@@ -100,7 +105,7 @@ public class BabyDogePaws {
                     .input(executor)
                     .predicate((r) -> r)
                     .build()
-                    .pollWhenMiss(() -> new BabyDogePawsException("telegram页面加载失败"));
+                    .throwWhenMiss(() -> new BabyDogePawsException("telegram页面加载失败"));
 
             // 点击baby-doge-paws聊天室
             waiter.until(ExpectedConditions.elementToBeClickable(ElementPosition.BABY_DAGE_PAWS_CHAT)).click();
@@ -159,10 +164,6 @@ public class BabyDogePaws {
                 // 继续丢到线程池的任务队列中排队执行，默认的就是FIFO队列
                 bootstrap(account, currentFailNum);
             }
-        } finally {
-            Optional.ofNullable(BabyDogePawsContext.<WebDriver>get(BabyDogePawsContextItem.WEB_DRIVER)).ifPresent(WebDriver::quit);
-            Optional.ofNullable(BabyDogePawsContext.<Process>get(BabyDogePawsContextItem.CHROME_PROCESS)).ifPresent(Process::destroy);
-            BabyDogePawsContext.remove();
         }
     }
 
