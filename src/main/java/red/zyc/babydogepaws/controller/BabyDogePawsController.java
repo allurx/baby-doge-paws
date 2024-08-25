@@ -1,21 +1,23 @@
 package red.zyc.babydogepaws.controller;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import red.zyc.babydogepaws.core.BabyDogePawsApi;
-import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.model.BabyDogePawsAccount;
+import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 
 /**
  * @author allurx
@@ -27,23 +29,59 @@ public class BabyDogePawsController {
     @Value("${chrome.root-data-dir}")
     private String chromeRootDataDir;
 
+    private final List<BabyDogePawsUser> users;
     private final BabyDogePawsApi babyDogePawsApi;
-    private final UserMapper userMapper;
 
-    public BabyDogePawsController(BabyDogePawsApi babyDogePawsApi, UserMapper userMapper) {
+    public BabyDogePawsController(@Qualifier("users") List<BabyDogePawsUser> users,
+                                  BabyDogePawsApi babyDogePawsApi) {
+        this.users = users;
         this.babyDogePawsApi = babyDogePawsApi;
-        this.userMapper = userMapper;
     }
 
-    @GetMapping("/listCardUpgradePrice")
-    public List<Map<String, String>> listCardUpgradePrice(Integer userId) {
-        return Optional.ofNullable(userMapper.getBabyDogeUser(userId))
+    /**
+     * 获取用户信息
+     *
+     * @param phoneNumber 用户手机号码
+     * @return 用户信息
+     */
+    @GetMapping("/getUser")
+    public BabyDogePawsUser getUser(String phoneNumber) {
+        return users.stream()
+                .filter(user -> Objects.equals(user.phoneNumber, phoneNumber))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * 获取用户好友信息
+     *
+     * @param phoneNumber 用户手机号码
+     * @return 用户好友信息
+     */
+    @GetMapping("/listFriends")
+    public Map<String, Object> listFriends(String phoneNumber) {
+        return users.stream()
+                .filter(user -> Objects.equals(user.phoneNumber, phoneNumber))
+                .findFirst()
+                .map(user -> babyDogePawsApi.listFriends(new BabyDogePawsGameRequestParam(new BabyDogePawsAccount(user, chromeRootDataDir))))
+                .orElse(new HashMap<>());
+    }
+
+    /**
+     * 获取用户所有卡的升级信息
+     *
+     * @param phoneNumber 用户手机号码
+     * @return 卡的升级信息
+     */
+    @GetMapping("/listCardUpgradeInfo")
+    public List<Map<String, String>> listCardUpgradeInfo(String phoneNumber) {
+        return users.stream()
+                .filter(user -> Objects.equals(user.phoneNumber, phoneNumber))
+                .findFirst()
                 .map(babyDogeUser -> new BabyDogePawsGameRequestParam(new BabyDogePawsAccount(babyDogeUser, chromeRootDataDir)))
                 .map(babyDogePawsApi::listCards)
-                .map(cards -> cards.stream().flatMap(o -> ((List<Map<String, Object>>) o.get("cards")).stream().map(card -> {
-                            card.put("categoryName", o.get("name"));
-                            return card;
-                        }))
+                .map(cards -> cards.stream()
+                        .flatMap(o -> ((List<Map<String, Object>>) o.get("cards")).stream().peek(card -> card.put("categoryName", o.get("name"))))
                         .filter(o -> (Boolean) o.get("is_available"))
                         .sorted(Comparator.<Map<String, Object>, BigDecimal>comparing((card) -> (new BigDecimal(card.get("upgrade_cost").toString())).divide(new BigDecimal(card.get("farming_upgrade").toString()), 0, RoundingMode.HALF_UP))
                                 .thenComparing((card) -> new BigDecimal(card.get("upgrade_cost").toString())))
@@ -53,8 +91,18 @@ public class BabyDogePawsController {
                             String categoryName = String.valueOf(card.get("categoryName"));
                             String upgradeCost = String.valueOf(card.get("upgrade_cost"));
                             String farmingUpgrade = String.valueOf(card.get("farming_upgrade"));
-                            return Map.of("categoryName", categoryName, "price", price, "name", name, "upgradeCost", upgradeCost, "farmingUpgrade", farmingUpgrade);
-                        }).toList())
+                            String curTotalFarming = String.valueOf(card.get("cur_total_farming"));
+                            return Map.of(
+                                    "categoryName", categoryName,
+                                    "price", price,
+                                    "name", name,
+                                    "upgradeCost", upgradeCost,
+                                    "farmingUpgrade", farmingUpgrade,
+                                    "curTotalFarming", curTotalFarming
+                            );
+                        })
+                        .toList()
+                )
                 .orElse(new ArrayList<>());
     }
 }

@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * telegram用户
+ * BabyDogePaws账户
  *
  * @author allurx
  */

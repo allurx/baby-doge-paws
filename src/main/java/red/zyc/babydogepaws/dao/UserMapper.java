@@ -30,10 +30,6 @@ public interface UserMapper {
              FROM
              	telegram_user a
              	LEFT JOIN game_login_info b ON a.id = b.user_id
-             	AND TIMESTAMPDIFF(
-             		SECOND,
-             		b.modified_time,
-             	now()) <= 24 * 60 * 60
              WHERE
              	a.banned = 0
              ORDER BY
@@ -57,10 +53,6 @@ public interface UserMapper {
              FROM
              	telegram_user a
              	LEFT JOIN game_login_info b ON a.id = b.user_id
-             	AND TIMESTAMPDIFF(
-             		SECOND,
-             		b.modified_time,
-             	now()) <= 24 * 60 * 60
              WHERE
              	a.banned = 0 and a.id=#{userId}
              ORDER BY

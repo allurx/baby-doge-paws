@@ -6,6 +6,7 @@ import red.zyc.babydogepaws.common.NamedThreadFactory;
 import red.zyc.babydogepaws.common.Poller;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.core.BabyDogePaws;
+import red.zyc.babydogepaws.core.BabyDogePawsApi;
 import red.zyc.babydogepaws.model.BabyDogePawsAccount;
 
 import java.math.BigDecimal;
@@ -36,6 +37,9 @@ public class TODO {
      *     <li>{@link BabyDogePaws#playBabyDogePaws(BabyDogePawsAccount, int)}优化</li>
      *     <li>
      *         是否可以复用一个webdriver
+     *     </li>
+     *     <li>
+     *         {@link BabyDogePawsApi}方法入参优化，应该是最底层的外部接口实际入参
      *     </li>
      *     <li>
      *         {@link Poller#throwWhenMiss(Supplier)}优化

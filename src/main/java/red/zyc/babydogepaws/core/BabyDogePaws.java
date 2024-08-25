@@ -8,6 +8,7 @@ import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.common.NamedThreadFactory;
@@ -15,9 +16,9 @@ import red.zyc.babydogepaws.common.Poller;
 import red.zyc.babydogepaws.common.util.Commons;
 import red.zyc.babydogepaws.common.util.Mails;
 import red.zyc.babydogepaws.dao.GameLoginInfoMapper;
-import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsException;
 import red.zyc.babydogepaws.model.BabyDogePawsAccount;
+import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.persistent.GameLoginInfo;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.selenium.ElementPosition;
@@ -50,39 +51,36 @@ public class BabyDogePaws {
     private static final String BABY_DOGE_PAWS_AUTH_PARAMS_LOCATION_PREFIX = "https://babydogeclikerbot.com/#tgWebAppData=";
     private static final ThreadPoolExecutor BOOTSTRAP_SERVICE = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("Bootstrap", false));
 
-    private final UserMapper userMapper;
     private final GameLoginInfoMapper gameLoginInfoMapper;
     private final BabyDogePawsTask babyDogePawsTask;
+    private final List<BabyDogePawsUser> users;
     private final Predicate<BabyDogePawsAccount> bootStrapAccountPredicate = account -> account.name.equals("19962006575") || account.name.equals("8502950634");
 
     @Value("${chrome.root-data-dir}")
     private String chromeRootDataDir;
 
-    public BabyDogePaws(UserMapper userMapper,
-                        GameLoginInfoMapper gameLoginInfoMapper,
-                        BabyDogePawsTask babyDogePawsTask) {
-        this.userMapper = userMapper;
+    public BabyDogePaws(GameLoginInfoMapper gameLoginInfoMapper,
+                        BabyDogePawsTask babyDogePawsTask, @Qualifier("users") List<BabyDogePawsUser> users) {
         this.gameLoginInfoMapper = gameLoginInfoMapper;
         this.babyDogePawsTask = babyDogePawsTask;
+        this.users = users;
     }
 
+    /**
+     * 启动
+     */
     public void bootstrap() {
-        userMapper.listBabyDogeUsers()
-                .stream()
+        users.stream().parallel()
                 .map(user -> new BabyDogePawsAccount(user, chromeRootDataDir))
-                .forEach(account -> bootstrap(account, 0));
+                .forEach(account -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(account)));
     }
 
-    private void bootstrap(BabyDogePawsAccount account, int failNum) {
-        BOOTSTRAP_SERVICE.execute(() -> {
-            if (Commons.isEmpty(account.user.authParam)) {
-                playBabyDogePaws(account, failNum);
-            } else {
-                babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(account));
-            }
-        });
-    }
-
+    /**
+     * 通过selenium模拟玩BabyDogePaws游戏
+     *
+     * @param account {@link BabyDogePawsAccount}
+     * @param failNum 模拟玩的过程失败次数，提供容错性
+     */
     public void playBabyDogePaws(BabyDogePawsAccount account, int failNum) {
         try (Chrome chrome = Chrome.builder()
                 .mode(Mode.ATTACH)
@@ -160,8 +158,8 @@ public class BabyDogePaws {
                 Mails.sendTextMail(account.name + "游戏登录失败", Commons.convertThrowableToString(t));
             } else {
 
-                // 继续丢到线程池的任务队列中排队执行，默认的就是FIFO队列
-                bootstrap(account, currentFailNum);
+                // 重新尝试
+                playBabyDogePaws(account, currentFailNum);
             }
         }
     }

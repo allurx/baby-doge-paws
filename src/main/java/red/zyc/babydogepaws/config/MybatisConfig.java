@@ -1,30 +1,27 @@
 package red.zyc.babydogepaws.config;
 
-import org.apache.ibatis.plugin.Interceptor;
-import org.apache.ibatis.plugin.Invocation;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import red.zyc.babydogepaws.dao.UserMapper;
+import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 
-import java.util.Properties;
+import java.util.List;
 
 /**
  * @author allurx
  */
+@Configuration
 public class MybatisConfig {
 
-    static class TT implements Interceptor {
+    private final UserMapper userMapper;
 
-        @Override
-        public Object intercept(Invocation invocation) throws Throwable {
-            return null;
-        }
-
-        @Override
-        public Object plugin(Object target) {
-            return Interceptor.super.plugin(target);
-        }
-
-        @Override
-        public void setProperties(Properties properties) {
-            Interceptor.super.setProperties(properties);
-        }
+    public MybatisConfig(UserMapper userMapper) {
+        this.userMapper = userMapper;
     }
+
+    @Bean("users")
+    public List<BabyDogePawsUser> listBabyDogeUsers() {
+        return userMapper.listBabyDogeUsers();
+    }
+
 }

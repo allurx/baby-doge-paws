@@ -146,11 +146,22 @@ public final class BabyDogePawsGame {
                         .build();
             }
         },
+
+        LIST_FRIENDS{
+
+            @Override
+            public HttpRequest build(BabyDogePawsGameRequestParam param) {
+                return HttpRequest.newBuilder()
+                        .uri(URI.create("https://backend.babydogepawsbot.com/friends"))
+                        .header(X_API_KEY, param.account.xApiKey())
+                        .GET()
+                        .build();
+            }
+        },
         ;
 
         private static final String X_API_KEY = "x-api-key";
 
-        //public abstract <T extends BabyDogePawsGameRequestParam> HttpRequest build(T request);
         public abstract HttpRequest build(BabyDogePawsGameRequestParam param);
 
     }

@@ -181,7 +181,7 @@ public class BabyDogePawsTask {
             if (scheme != null && (scheme.equals("http") || scheme.equals("https")) && uri.getHost() != null) {
                 return Optional.of(uri);
             } else {
-                LOGGER.error("[无效的邀请链接]:{}", link);
+                LOGGER.warn("[无效的邀请链接]:{}", link);
                 return Optional.empty();
             }
         } catch (Throwable t) {
