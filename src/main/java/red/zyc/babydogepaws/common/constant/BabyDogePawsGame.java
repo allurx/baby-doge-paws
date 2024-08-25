@@ -8,6 +8,7 @@ import red.zyc.babydogepaws.model.request.UpgradeCard;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.util.Map;
+import java.util.Optional;
 
 import static red.zyc.toolkit.json.Json.JACKSON_OPERATOR;
 
@@ -27,7 +28,7 @@ public final class BabyDogePawsGame {
                 return HttpRequest.newBuilder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/authorize"))
                         .header("Content-Type", "application/x-www-form-urlencoded")
-                        .POST(HttpRequest.BodyPublishers.ofString(param.account.user.authParam))
+                        .POST(HttpRequest.BodyPublishers.ofString(Optional.ofNullable(param.account.user.authParam).orElse("")))
                         .build();
             }
         },
