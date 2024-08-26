@@ -1,6 +1,6 @@
 package red.zyc.babydogepaws.model.request;
 
-import red.zyc.babydogepaws.model.BabyDogePawsAccount;
+import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.response.Card;
 
 import java.math.BigDecimal;
@@ -23,8 +23,8 @@ public class UpgradeCard extends BabyDogePawsGameRequestParam {
      */
     public final Card card;
 
-    public UpgradeCard(BabyDogePawsAccount account, BigDecimal balance, Card card) {
-        super(account);
+    public UpgradeCard(BabyDogePawsUser user, BigDecimal balance, Card card) {
+        super(user);
         this.balance = balance;
         this.card = card;
     }

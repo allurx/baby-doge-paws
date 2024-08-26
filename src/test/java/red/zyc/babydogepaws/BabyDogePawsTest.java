@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.RequestEntity;
+import red.zyc.babydogepaws.common.util.ApplicationContextHolder;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.toolkit.json.Json;
 
@@ -50,6 +51,12 @@ public class BabyDogePawsTest {
                 }).getBody();
         assert body != null;
         LOGGER.info(Json.JACKSON_OPERATOR.toJsonString(body));
+    }
+
+    @Test
+    void test(){
+        String property = ApplicationContextHolder.getProperty("chrome.root-data-dir", String.class);
+        System.out.println(property);
     }
 
 }

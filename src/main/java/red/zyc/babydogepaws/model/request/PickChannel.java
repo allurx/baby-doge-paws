@@ -1,6 +1,6 @@
 package red.zyc.babydogepaws.model.request;
 
-import red.zyc.babydogepaws.model.BabyDogePawsAccount;
+import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.response.Channel;
 
 /**
@@ -15,8 +15,8 @@ public class PickChannel extends BabyDogePawsGameRequestParam {
      */
     public final Channel channel;
 
-    public PickChannel(BabyDogePawsAccount account, Channel channel) {
-        super(account);
+    public PickChannel(BabyDogePawsUser user, Channel channel) {
+        super(user);
         this.channel = channel;
     }
 }

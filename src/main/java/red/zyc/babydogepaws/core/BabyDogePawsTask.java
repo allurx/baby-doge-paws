@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.common.NamedThreadFactory;
-import red.zyc.babydogepaws.model.BabyDogePawsAccount;
+import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.model.request.PickChannel;
 import red.zyc.babydogepaws.model.request.UpgradeCard;
@@ -26,8 +26,6 @@ import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import static red.zyc.babydogepaws.common.util.Commons.safeRunnable;
 
 /**
  * @author allurx
@@ -67,7 +65,13 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     private void scheduleAuthorize(BabyDogePawsGameRequestParam param) {
-        BABY_DOGE_PAWS_AUTH.scheduleAtFixedRate(safeRunnable(() -> babyDogePawsApi.authorize(param)), 0L, 1L, TimeUnit.HOURS);
+        BABY_DOGE_PAWS_AUTH.scheduleAtFixedRate(() -> {
+            try {
+                babyDogePawsApi.authorize(param);
+            } catch (Throwable t) {
+                LOGGER.error("[执行授权task发生异常]-{}", param.user.phoneNumber, t);
+            }
+        }, 0L, 1L, TimeUnit.HOURS);
     }
 
     /**
@@ -76,11 +80,15 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     private void schedulePickDailyBonus(BabyDogePawsGameRequestParam param) {
-        BABY_DOGE_PAWS_SUCCESS_ONCE_TASK.scheduleAtFixedRate(safeRunnable(() -> {
-            if ((boolean) babyDogePawsApi.getDailyBonuses(param).getOrDefault("has_available", false)) {
-                babyDogePawsApi.pickDailyBonus(param);
+        BABY_DOGE_PAWS_SUCCESS_ONCE_TASK.scheduleAtFixedRate(() -> {
+            try {
+                if ((boolean) babyDogePawsApi.getDailyBonuses(param).getOrDefault("has_available", false)) {
+                    babyDogePawsApi.pickDailyBonus(param);
+                }
+            } catch (Throwable t) {
+                LOGGER.error("[执行采集每日奖励task发生异常]-{}", param.user.phoneNumber, t);
             }
-        }), 0L, 1L, TimeUnit.HOURS);
+        }, 0L, 1L, TimeUnit.HOURS);
     }
 
     /**
@@ -89,11 +97,15 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     private void schedulePickPromo(BabyDogePawsGameRequestParam param) {
-        BABY_DOGE_PAWS_SUCCESS_ONCE_TASK.scheduleAtFixedRate(safeRunnable(() -> {
-            if (!(boolean) babyDogePawsApi.getPromo(param).getOrDefault("is_reward_taken", true)) {
-                babyDogePawsApi.pickPromo(param);
+        BABY_DOGE_PAWS_SUCCESS_ONCE_TASK.scheduleAtFixedRate(() -> {
+            try {
+                if (!(boolean) babyDogePawsApi.getPromo(param).getOrDefault("is_reward_taken", true)) {
+                    babyDogePawsApi.pickPromo(param);
+                }
+            } catch (Throwable t) {
+                LOGGER.error("[执行采集促销奖励task发生异常]-{}", param.user.phoneNumber, t);
             }
-        }), 0L, 1L, TimeUnit.HOURS);
+        }, 0L, 1L, TimeUnit.HOURS);
     }
 
     /**
@@ -102,8 +114,13 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     private void scheduleMine(BabyDogePawsGameRequestParam param) {
-        BABY_DOGE_PAWS_MINER.scheduleAtFixedRate(safeRunnable(() -> babyDogePawsApi.mine(param)),
-                0L, BabyDogePawsAccount.MINE_INTERVAL, TimeUnit.SECONDS);
+        BABY_DOGE_PAWS_MINER.scheduleAtFixedRate(() -> {
+            try {
+                babyDogePawsApi.mine(param);
+            } catch (Throwable t) {
+                LOGGER.error("[执行挖矿task发生异常]-{}", param.user.phoneNumber, t);
+            }
+        }, 0L, BabyDogePawsUser.MINE_INTERVAL, TimeUnit.SECONDS);
     }
 
     /**
@@ -112,11 +129,15 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     private void scheduleUpgradeCard(BabyDogePawsGameRequestParam param) {
-        BABY_DOGE_PAWS_UPGRADE_CARD.scheduleAtFixedRate(safeRunnable(() -> {
-            BigDecimal balance = new BigDecimal(babyDogePawsApi.getMe(param).getOrDefault("balance", BigDecimal.ZERO).toString());
-            List<Map<String, Object>> cards = babyDogePawsApi.listCards(param);
-            upgradeCard(param.account, balance, cards);
-        }), 0L, 3L, TimeUnit.MINUTES);
+        BABY_DOGE_PAWS_UPGRADE_CARD.scheduleAtFixedRate(() -> {
+            try {
+                BigDecimal balance = new BigDecimal(babyDogePawsApi.getMe(param).getOrDefault("balance", BigDecimal.ZERO).toString());
+                List<Map<String, Object>> cards = babyDogePawsApi.listCards(param);
+                upgradeCard(param.user, balance, cards);
+            } catch (Throwable t) {
+                LOGGER.error("[执行升级卡片task发生异常]-{}", param.user.phoneNumber, t);
+            }
+        }, 0L, 3L, TimeUnit.MINUTES);
     }
 
     /**
@@ -125,22 +146,26 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     public void schedulePickChannel(BabyDogePawsGameRequestParam param) {
-        BABY_DOGE_PAWS_SUCCESS_ONCE_TASK.scheduleAtFixedRate(safeRunnable(() -> {
-            @SuppressWarnings("unchecked")
-            var channels = (List<Map<String, Object>>) babyDogePawsApi.listChannels(param).getOrDefault("channels", new ArrayList<>());
-            channels.stream().parallel()
-                    .map(channel -> new Channel(channel.get("id").toString(), channel.get("invite_link").toString(), (boolean) channel.get("is_available")))
-                    .filter(Channel::isAvailable)
-                    .forEach(channel -> inviteLink(channel.inviteLink())
-                            .ifPresent((uri) -> CLIENT.sendAsync(HttpRequest.newBuilder().uri(uri).GET().build(), HttpResponse.BodyHandlers.discarding()).thenAccept(response -> {
-                                LOGGER.info("[点击邀请链接响应成功]:{}", channel.inviteLink());
-                                babyDogePawsApi.pickChannel(new PickChannel(param.account, channel));
-                            }).exceptionally(t -> {
-                                LOGGER.error("[点击邀请链接响应失败]:{}", channel.inviteLink(), t);
-                                babyDogePawsApi.pickChannel(new PickChannel(param.account, channel));
-                                return null;
-                            }).join()));
-        }), 0L, 1L, TimeUnit.HOURS);
+        BABY_DOGE_PAWS_SUCCESS_ONCE_TASK.scheduleAtFixedRate(() -> {
+            try {
+                @SuppressWarnings("unchecked")
+                var channels = (List<Map<String, Object>>) babyDogePawsApi.listChannels(param).getOrDefault("channels", new ArrayList<>());
+                channels.stream().parallel()
+                        .map(channel -> new Channel(channel.get("id").toString(), channel.get("invite_link").toString(), (boolean) channel.get("is_available")))
+                        .filter(Channel::isAvailable)
+                        .forEach(channel -> inviteLink(channel.inviteLink())
+                                .ifPresent((uri) -> CLIENT.sendAsync(HttpRequest.newBuilder().uri(uri).GET().build(), HttpResponse.BodyHandlers.discarding()).thenAccept(response -> {
+                                    LOGGER.info("[点击邀请链接响应成功]:{}", channel.inviteLink());
+                                    babyDogePawsApi.pickChannel(new PickChannel(param.user, channel));
+                                }).exceptionally(t -> {
+                                    LOGGER.error("[点击邀请链接响应失败]:{}", channel.inviteLink(), t);
+                                    babyDogePawsApi.pickChannel(new PickChannel(param.user, channel));
+                                    return null;
+                                }).join()));
+            } catch (Throwable t) {
+                LOGGER.error("[执行采集任务奖励task发生异常]-{}", param.user.phoneNumber, t);
+            }
+        }, 0L, 1L, TimeUnit.HOURS);
     }
 
     /**
@@ -150,7 +175,7 @@ public class BabyDogePawsTask {
      * @param cards   卡片列表
      */
     @SuppressWarnings("unchecked")
-    private void upgradeCard(BabyDogePawsAccount account, BigDecimal balance, List<Map<String, Object>> cards) {
+    private void upgradeCard(BabyDogePawsUser user, BigDecimal balance, List<Map<String, Object>> cards) {
         cards.stream().flatMap(o -> ((List<Map<String, Object>>) o.get("cards")).stream())
                 .filter(o -> (Boolean) o.get("is_available"))
                 .sorted(Comparator.<Map<String, Object>, BigDecimal>comparing(card -> new BigDecimal(card.get("upgrade_cost").toString()).divide(new BigDecimal(card.get("farming_upgrade").toString()), 2, RoundingMode.HALF_UP))
@@ -159,10 +184,10 @@ public class BabyDogePawsTask {
                 .findFirst()
                 .ifPresent(card -> {
                     if (canUpgradeCard(balance, card)) {
-                        var map = babyDogePawsApi.upgradeCard(new UpgradeCard(account, balance, card));
+                        var map = babyDogePawsApi.upgradeCard(new UpgradeCard(user, balance, card));
                         var latestBalance = new BigDecimal(map.getOrDefault("balance", BigDecimal.ZERO).toString());
                         var latestCards = (List<Map<String, Object>>) map.getOrDefault("cards", new ArrayList<>());
-                        upgradeCard(account, latestBalance, latestCards);
+                        upgradeCard(user, latestBalance, latestCards);
                     }
                 });
     }
@@ -171,7 +196,7 @@ public class BabyDogePawsTask {
         var price = card.upgradeCost().divide(card.farmingUpgrade(), 2, RoundingMode.HALF_UP);
         return balance.compareTo(card.upgradeCost()) >= 0 &&
                 price.compareTo(BigDecimal.valueOf(1517.26)) < 0 &&
-                card.upgradeCost().compareTo(BigDecimal.valueOf(10000000)) <= 0;
+                card.upgradeCost().compareTo(BigDecimal.valueOf(5000000)) <= 0;
     }
 
     private Optional<URI> inviteLink(String link) {

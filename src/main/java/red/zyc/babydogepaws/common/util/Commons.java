@@ -1,8 +1,5 @@
 package red.zyc.babydogepaws.common.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;
@@ -11,8 +8,6 @@ import java.util.Optional;
  * @author allurx
  */
 public final class Commons {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(Commons.class);
 
     private Commons() {
     }
@@ -29,22 +24,6 @@ public final class Commons {
             t.printStackTrace(new PrintWriter(stringWriter, true));
             return stringWriter.getBuffer().toString();
         }).get();
-    }
-
-    /**
-     * 包装{@link Runnable}，使其在执行run方法时不会抛出异常
-     *
-     * @param r {@link Runnable}
-     * @return 执行run方法时不会抛出异常的 {@link Runnable}
-     */
-    public static Runnable safeRunnable(Runnable r) {
-        return () -> {
-            try {
-                r.run();
-            } catch (Throwable t) {
-                LOGGER.error(t.getMessage(), t);
-            }
-        };
     }
 
     /**

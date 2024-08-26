@@ -9,17 +9,13 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import red.zyc.babydogepaws.common.NamedThreadFactory;
 import red.zyc.babydogepaws.common.Poller;
 import red.zyc.babydogepaws.common.util.Commons;
 import red.zyc.babydogepaws.common.util.Mails;
-import red.zyc.babydogepaws.dao.GameLoginInfoMapper;
+import red.zyc.babydogepaws.dao.LoginInfoMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsException;
-import red.zyc.babydogepaws.model.BabyDogePawsAccount;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
-import red.zyc.babydogepaws.model.persistent.GameLoginInfo;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.selenium.ElementPosition;
 import red.zyc.babydogepaws.selenium.Javascript;
@@ -30,14 +26,10 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 
 /**
  * @author allurx
@@ -49,19 +41,14 @@ public class BabyDogePaws {
     private static final String TELEGRAM_WEB_URL = "https://web.telegram.org/a/";
     private static final List<String> AUTH_PARAM_NAMES = List.of("query_id", "user", "auth_date", "hash");
     private static final String BABY_DOGE_PAWS_AUTH_PARAMS_LOCATION_PREFIX = "https://babydogeclikerbot.com/#tgWebAppData=";
-    private static final ThreadPoolExecutor BOOTSTRAP_SERVICE = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("Bootstrap", false));
 
-    private final GameLoginInfoMapper gameLoginInfoMapper;
+    private final LoginInfoMapper loginInfoMapper;
     private final BabyDogePawsTask babyDogePawsTask;
     private final List<BabyDogePawsUser> users;
-    private final Predicate<BabyDogePawsAccount> bootStrapAccountPredicate = account -> account.name.equals("19962006575") || account.name.equals("8502950634");
 
-    @Value("${chrome.root-data-dir}")
-    private String chromeRootDataDir;
-
-    public BabyDogePaws(GameLoginInfoMapper gameLoginInfoMapper,
-                        BabyDogePawsTask babyDogePawsTask, @Qualifier("users") List<BabyDogePawsUser> users) {
-        this.gameLoginInfoMapper = gameLoginInfoMapper;
+    public BabyDogePaws(LoginInfoMapper loginInfoMapper, BabyDogePawsTask babyDogePawsTask,
+                        @Qualifier("users") List<BabyDogePawsUser> users) {
+        this.loginInfoMapper = loginInfoMapper;
         this.babyDogePawsTask = babyDogePawsTask;
         this.users = users;
     }
@@ -70,24 +57,21 @@ public class BabyDogePaws {
      * 启动
      */
     public void bootstrap() {
-        users.stream().parallel()
-                .map(user -> new BabyDogePawsAccount(user, chromeRootDataDir))
-                .forEach(account -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(account)));
+        users.parallelStream().forEach(user -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user)));
     }
 
     /**
      * 通过selenium模拟玩BabyDogePaws游戏
      *
-     * @param account {@link BabyDogePawsAccount}
+     * @param user    {@link BabyDogePawsUser}
      * @param failNum 模拟玩的过程失败次数，提供容错性
      */
-    public void playBabyDogePaws(BabyDogePawsAccount account, int failNum) {
+    public void playBabyDogePaws(BabyDogePawsUser user, int failNum) {
         try (Chrome chrome = Chrome.builder()
                 .mode(Mode.ATTACH)
-                .addArgs("--user-data-dir=" + account.chromeDataDir, "--headless=new")
+                .addArgs("--user-data-dir=" + user.chromeDataDir(), "--headless=new")
                 .build()) {
 
-            LocalDateTime startTime = LocalDateTime.now();
             WebDriver webDriver = chrome.webDriver();
             webDriver.get(TELEGRAM_WEB_URL);
             FluentWait<WebDriver> waiter = new WebDriverWait(webDriver, Duration.ofSeconds(30L), Duration.ofSeconds(1L));
@@ -137,29 +121,30 @@ public class BabyDogePaws {
                     .describeConstable()
                     .orElseThrow(() -> new BabyDogePawsException("BabyDogePaws授权参数为null"));
 
-            int duration = (int) startTime.until(LocalDateTime.now(), ChronoUnit.SECONDS);
-            account.user.authParam = authParam;
+            user.authParam = authParam;
+
+            // 保存或更新登录信息
+            loginInfoMapper.saveOrUpdateLoginInfo(user.id, LocalDateTime.now(), authParam);
 
             // 启动所有定时任务
-            babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(account));
+            babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user));
 
-            // 保存登录信息
-            gameLoginInfoMapper.saveOrUpdateGameLoginInfo(new GameLoginInfo(account.user.id, account.user.authParam, duration));
-
-            LOGGER.info("[游戏登录成功]-{}:{}", account.name, authParam);
+            LOGGER.info("[游戏登录成功]-{}:{}", user.phoneNumber, authParam);
 
         } catch (Throwable t) {
 
             int currentFailNum = ++failNum;
-            LOGGER.error(String.format("[游戏登录失败]-%s-%s:", account.name, currentFailNum), t);
+            LOGGER.error(String.format("[游戏登录失败]-%s-%s:", user.phoneNumber, currentFailNum), t);
 
-            // 游戏登录失败6次放弃
-            if (currentFailNum == 6) {
-                Mails.sendTextMail(account.name + "游戏登录失败", Commons.convertThrowableToString(t));
+            Mails.sendTextMail(user.phoneNumber + "游戏登录失败", Commons.convertThrowableToString(t));
+
+            // 游戏登录失败3次放弃
+            if (currentFailNum == 3) {
+                Mails.sendTextMail(user.phoneNumber + "游戏登录失败", Commons.convertThrowableToString(t));
             } else {
 
                 // 重新尝试
-                playBabyDogePaws(account, currentFailNum);
+                playBabyDogePaws(user, currentFailNum);
             }
         }
     }

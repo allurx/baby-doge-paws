@@ -1,15 +1,15 @@
 package red.zyc.babydogepaws.model.request;
 
-import red.zyc.babydogepaws.model.BabyDogePawsAccount;
+import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 
 /**
  * @author allurx
  */
 public class BabyDogePawsGameRequestParam {
 
-    public final BabyDogePawsAccount account;
+    public final BabyDogePawsUser user;
 
-    public BabyDogePawsGameRequestParam(BabyDogePawsAccount account) {
-        this.account = account;
+    public BabyDogePawsGameRequestParam(BabyDogePawsUser user) {
+        this.user = user;
     }
 }

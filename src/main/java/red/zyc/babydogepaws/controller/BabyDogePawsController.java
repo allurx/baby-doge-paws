@@ -1,12 +1,10 @@
 package red.zyc.babydogepaws.controller;
 
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import red.zyc.babydogepaws.core.BabyDogePawsApi;
-import red.zyc.babydogepaws.model.BabyDogePawsAccount;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 
@@ -25,9 +23,6 @@ import java.util.Objects;
 @RestController
 @RequestMapping
 public class BabyDogePawsController {
-
-    @Value("${chrome.root-data-dir}")
-    private String chromeRootDataDir;
 
     private final List<BabyDogePawsUser> users;
     private final BabyDogePawsApi babyDogePawsApi;
@@ -63,7 +58,7 @@ public class BabyDogePawsController {
         return users.stream()
                 .filter(user -> Objects.equals(user.phoneNumber, phoneNumber))
                 .findFirst()
-                .map(user -> babyDogePawsApi.listFriends(new BabyDogePawsGameRequestParam(new BabyDogePawsAccount(user, chromeRootDataDir))))
+                .map(user -> babyDogePawsApi.listFriends(new BabyDogePawsGameRequestParam(user)))
                 .orElse(new HashMap<>());
     }
 
@@ -78,7 +73,7 @@ public class BabyDogePawsController {
         return users.stream()
                 .filter(user -> Objects.equals(user.phoneNumber, phoneNumber))
                 .findFirst()
-                .map(babyDogeUser -> new BabyDogePawsGameRequestParam(new BabyDogePawsAccount(babyDogeUser, chromeRootDataDir)))
+                .map(BabyDogePawsGameRequestParam::new)
                 .map(babyDogePawsApi::listCards)
                 .map(cards -> cards.stream()
                         .flatMap(o -> ((List<Map<String, Object>>) o.get("cards")).stream().peek(card -> card.put("categoryName", o.get("name"))))

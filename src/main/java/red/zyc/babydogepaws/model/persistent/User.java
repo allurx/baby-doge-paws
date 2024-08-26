@@ -5,16 +5,14 @@ import java.time.LocalDateTime;
 /**
  * @author allurx
  */
-public class Account {
+public class User {
 
     public Integer id;
     public Integer userId;
     public String inviteLink;
+    public String xApiKey;
+    public Integer friendNum;
     public LocalDateTime createdTime;
     public LocalDateTime modifiedTime;
 
-    public Account(Integer userId, String inviteLink) {
-        this.userId = userId;
-        this.inviteLink = inviteLink;
-    }
 }

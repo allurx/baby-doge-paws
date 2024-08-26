@@ -7,7 +7,6 @@ import red.zyc.babydogepaws.common.Poller;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.core.BabyDogePaws;
 import red.zyc.babydogepaws.core.BabyDogePawsApi;
-import red.zyc.babydogepaws.model.BabyDogePawsAccount;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
