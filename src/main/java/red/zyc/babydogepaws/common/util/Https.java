@@ -25,7 +25,7 @@ public final class Https {
      * @return 解析后的对象
      */
     public static <T> Optional<T> parseJsonResponse(HttpResponse<String> response, TypeToken<T> typeToken) {
-        return Optional.ofNullable(response.body()).map((s) -> JACKSON_OPERATOR.fromJsonString(s, typeToken));
+        return Optional.ofNullable(response.body()).map(s -> JACKSON_OPERATOR.fromJsonString(s, typeToken));
     }
 
     /**

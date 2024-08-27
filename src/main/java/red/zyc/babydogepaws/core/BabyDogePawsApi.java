@@ -26,6 +26,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import static red.zyc.babydogepaws.common.constant.BabyDogePawsGame.Request.*;
 
 /**
+ * BabyDogePaws游戏http接口
+ *
  * @author allurx
  */
 @Service
@@ -56,15 +58,20 @@ public class BabyDogePawsApi {
      *
      * @param param {@link BabyDogePawsGameRequestParam}
      * @param code  http响应码
+     * @return authorize任务有没有成功被执行
      */
-    private void reAuthorizeIfNecessary(BabyDogePawsGameRequestParam param, int code) {
+    private boolean authorizeSuccess(BabyDogePawsGameRequestParam param, int code) {
         if (code == 401) {
             authorize(param);
+            return !param.user.tasksCanceled;
         }
+        return false;
     }
 
     /**
-     * 游戏授权
+     * 同一时刻同一个用户只允许一个线程执行游戏授权<br>
+     * 如果{@link BabyDogePawsUser#cancelAllTask() 登入失败次数过多导致任务被取消了}，
+     * 那么就不需要执行该任务了
      *
      * @param param {@link BabyDogePawsGameRequestParam}
      * @return 用户信息
@@ -73,8 +80,7 @@ public class BabyDogePawsApi {
         var userLock = getUserLock(param.user.id);
         userLock.lock();
         try {
-            // 同一时刻同一个用户只允许一个线程执行授权
-            return CLIENT.sendAsync(AUTHORIZE.build(param), HttpResponse.BodyHandlers.ofString())
+            return param.user.tasksCanceled ? new HashMap<>() : CLIENT.sendAsync(AUTHORIZE.build(param), HttpResponse.BodyHandlers.ofString())
                     .<Map<String, Object>>thenApply(response -> {
                         if (response.statusCode() != 200) {
 
@@ -97,7 +103,7 @@ public class BabyDogePawsApi {
                                 param.user.data = authData;
 
                                 // 保存或更新游戏账户的一些信息
-                                Map<String, Object> friends = listFriends(param);
+                                var friends = listFriends(param);
                                 userMapper.saveOrUpdateUser(
                                         param.user.id,
                                         String.valueOf(friends.get("copy_link")),
@@ -125,8 +131,7 @@ public class BabyDogePawsApi {
                 .<Map<String, Object>>thenApply(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[获取用户信息失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        reAuthorizeIfNecessary(param, response.statusCode());
-                        return response.statusCode() == 401 ? getMe(param) : new HashMap<>();
+                        return authorizeSuccess(param, response.statusCode()) ? getMe(param) : new HashMap<>();
                     } else {
                         LOGGER.info("[获取用户信息成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, false));
                         return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE).
@@ -147,8 +152,7 @@ public class BabyDogePawsApi {
                 .<Map<String, Object>>thenApply(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[采集每日奖励失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        reAuthorizeIfNecessary(param, response.statusCode());
-                        return response.statusCode() == 401 ? pickDailyBonus(param) : new HashMap<>();
+                        return authorizeSuccess(param, response.statusCode()) ? pickDailyBonus(param) : new HashMap<>();
                     } else {
                         LOGGER.info("[采集每日奖励成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
@@ -169,8 +173,7 @@ public class BabyDogePawsApi {
                 .<Map<String, Object>>thenApply(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[获取每日奖励内容失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        reAuthorizeIfNecessary(param, response.statusCode());
-                        return response.statusCode() == 401 ? getDailyBonuses(param) : new HashMap<>();
+                        return authorizeSuccess(param, response.statusCode()) ? getDailyBonuses(param) : new HashMap<>();
                     } else {
                         LOGGER.info("[获取每日奖励内容成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
@@ -191,8 +194,7 @@ public class BabyDogePawsApi {
                 .<List<Map<String, Object>>>thenApply(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[获取卡片列表失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        reAuthorizeIfNecessary(param, response.statusCode());
-                        return response.statusCode() == 401 ? listCards(param) : new ArrayList<>();
+                        return authorizeSuccess(param, response.statusCode()) ? listCards(param) : new ArrayList<>();
                     } else {
                         LOGGER.info("[获取卡片列表成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, false));
                         return Https.parseJsonResponse(response, Constants.LIST_OBJECT_DATA_TYPE)
@@ -213,8 +215,7 @@ public class BabyDogePawsApi {
                 .<Map<String, Object>>thenApply(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[卡片升级失败]-{}:{}:{}:{}:{}", upgradeCard.user.phoneNumber, upgradeCard.balance, upgradeCard.card.id(), upgradeCard.card.upgradeCost(), Https.formatJsonResponse(response, true));
-                        reAuthorizeIfNecessary(upgradeCard, response.statusCode());
-                        return response.statusCode() == 401 ? upgradeCard(upgradeCard) : new HashMap<>();
+                        return authorizeSuccess(upgradeCard, response.statusCode()) ? upgradeCard(upgradeCard) : new HashMap<>();
                     } else {
                         LOGGER.info("[卡片升级成功]-{}:{}:{}:{}:{}", upgradeCard.user.phoneNumber, upgradeCard.balance, upgradeCard.card.id(), upgradeCard.card.upgradeCost(), Https.formatJsonResponse(response, false));
                         return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
@@ -235,8 +236,7 @@ public class BabyDogePawsApi {
                 .<Map<String, Object>>thenApply(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[挖矿失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        reAuthorizeIfNecessary(param, response.statusCode());
-                        return response.statusCode() == 401 ? mine(param) : new HashMap<>();
+                        return authorizeSuccess(param, response.statusCode()) ? mine(param) : new HashMap<>();
                     } else {
                         LOGGER.info("[挖矿成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, false));
                         return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
@@ -257,8 +257,7 @@ public class BabyDogePawsApi {
                 .<Map<String, Object>>thenApply(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[获取任务列表失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        reAuthorizeIfNecessary(param, response.statusCode());
-                        return response.statusCode() == 401 ? listChannels(param) : new HashMap<>();
+                        return authorizeSuccess(param, response.statusCode()) ? listChannels(param) : new HashMap<>();
                     } else {
                         LOGGER.info("[获取任务列表成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
@@ -279,8 +278,7 @@ public class BabyDogePawsApi {
                 .<Map<String, Object>>thenApply(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[采集任务奖励失败]-{}:{}:{}:{}", pickChannel.user.phoneNumber, pickChannel.channel.id(), pickChannel.channel.inviteLink(), Https.formatJsonResponse(response, true));
-                        reAuthorizeIfNecessary(pickChannel, response.statusCode());
-                        return response.statusCode() == 401 ? pickChannel(pickChannel) : new HashMap<>();
+                        return authorizeSuccess(pickChannel, response.statusCode()) ? pickChannel(pickChannel) : new HashMap<>();
                     } else {
                         LOGGER.info("[采集任务奖励成功]-{}:{}:{}:{}", pickChannel.user.phoneNumber, pickChannel.channel.id(), pickChannel.channel.inviteLink(), Https.formatJsonResponse(response, true));
                         return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
@@ -301,8 +299,7 @@ public class BabyDogePawsApi {
                 .<Map<String, Object>>thenApply(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[参与促销失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        reAuthorizeIfNecessary(param, response.statusCode());
-                        return response.statusCode() == 401 ? pickPromo(param) : new HashMap<>();
+                        return authorizeSuccess(param, response.statusCode()) ? pickPromo(param) : new HashMap<>();
                     } else {
                         LOGGER.info("[参与促销成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
@@ -323,8 +320,7 @@ public class BabyDogePawsApi {
                 .<Map<String, Object>>thenApply(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[获取促销信息失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        reAuthorizeIfNecessary(param, response.statusCode());
-                        return response.statusCode() == 401 ? getPromo(param) : new HashMap<>();
+                        return authorizeSuccess(param, response.statusCode()) ? getPromo(param) : new HashMap<>();
                     } else {
                         LOGGER.info("[获取促销信息成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
@@ -345,8 +341,7 @@ public class BabyDogePawsApi {
                 .<Map<String, Object>>thenApply(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[获取好友列表失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        reAuthorizeIfNecessary(param, response.statusCode());
-                        return response.statusCode() == 401 ? listFriends(param) : new HashMap<>();
+                        return authorizeSuccess(param, response.statusCode()) ? listFriends(param) : new HashMap<>();
                     } else {
                         LOGGER.info("[获取好友列表成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)

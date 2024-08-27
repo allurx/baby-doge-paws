@@ -8,7 +8,7 @@ public final class Javascript {
     private Javascript() {
     }
 
-    public static String WINDOW_LOADED = "return document.readyState === \"complete\"";
+    public static String TELEGRAM_PAGE_LOADED = "return document.readyState === \"complete\" && localStorage.getItem(\"user_auth\") !== null";
 
     public static final String LINK_IS_CLICKABLE = """
             return (function(){

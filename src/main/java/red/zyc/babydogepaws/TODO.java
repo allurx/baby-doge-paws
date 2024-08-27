@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import red.zyc.babydogepaws.common.NamedThreadFactory;
 import red.zyc.babydogepaws.common.Poller;
 import red.zyc.babydogepaws.common.constant.Constants;
-import red.zyc.babydogepaws.core.BabyDogePaws;
 import red.zyc.babydogepaws.core.BabyDogePawsApi;
 
 import java.math.BigDecimal;
@@ -33,7 +32,6 @@ public class TODO {
 
     /**
      * <ol>
-     *     <li>{@link BabyDogePaws#playBabyDogePaws(BabyDogePawsAccount, int)}优化</li>
      *     <li>
      *         是否可以复用一个webdriver
      *     </li>

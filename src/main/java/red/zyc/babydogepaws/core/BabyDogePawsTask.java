@@ -23,7 +23,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -36,10 +36,10 @@ public class BabyDogePawsTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePawsTask.class);
     private static final HttpClient CLIENT = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10L)).build();
 
-    private static final ScheduledExecutorService BABY_DOGE_PAWS_AUTH = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("BabyDogePawsAuth", true));
-    private static final ScheduledExecutorService BABY_DOGE_PAWS_MINER = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("BabyDogePawsMiner", true));
-    private static final ScheduledExecutorService BABY_DOGE_PAWS_UPGRADE_CARD = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("BabyDogePawsUpgradeCard", true));
-    private static final ScheduledExecutorService BABY_DOGE_PAWS_SUCCESS_ONCE_TASK = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("BabyDogePawsSuccessOnceTask", true));
+    private static final ScheduledThreadPoolExecutor AUTHENTICATOR = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("Authenticator", true));
+    private static final ScheduledThreadPoolExecutor MINER = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("Miner", true));
+    private static final ScheduledThreadPoolExecutor CARD_UP_GRADER = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("CardUpGrader", true));
+    private static final ScheduledThreadPoolExecutor ONE_TIME_TASK_HITTER = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("OneTimeMissionHitter", true));
     private final BabyDogePawsApi babyDogePawsApi;
 
     public BabyDogePawsTask(BabyDogePawsApi babyDogePawsApi) {
@@ -52,20 +52,21 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     public void schedule(BabyDogePawsGameRequestParam param) {
-        scheduleAuthorize(param);
-        schedulePickDailyBonus(param);
-        schedulePickPromo(param);
-        scheduleMine(param);
-        scheduleUpgradeCard(param);
+        param.user.tasks.add(scheduleAuthorize(param));
+        param.user.tasks.add(schedulePickDailyBonus(param));
+        param.user.tasks.add(schedulePickPromo(param));
+        param.user.tasks.add(scheduleMine(param));
+        param.user.tasks.add(scheduleUpgradeCard(param));
     }
 
     /**
      * 每隔1小时授权一次，确保游戏处于活跃状态，以便能够持续产生利润
      *
      * @param param {@link BabyDogePawsGameRequestParam}
+     * @return 任务
      */
-    private void scheduleAuthorize(BabyDogePawsGameRequestParam param) {
-        BABY_DOGE_PAWS_AUTH.scheduleAtFixedRate(() -> {
+    private ScheduledFuture<?> scheduleAuthorize(BabyDogePawsGameRequestParam param) {
+        return AUTHENTICATOR.scheduleAtFixedRate(() -> {
             try {
                 babyDogePawsApi.authorize(param);
             } catch (Throwable t) {
@@ -78,9 +79,10 @@ public class BabyDogePawsTask {
      * 定时采集当天每日奖励
      *
      * @param param {@link BabyDogePawsGameRequestParam}
+     * @return 任务
      */
-    private void schedulePickDailyBonus(BabyDogePawsGameRequestParam param) {
-        BABY_DOGE_PAWS_SUCCESS_ONCE_TASK.scheduleAtFixedRate(() -> {
+    private ScheduledFuture<?> schedulePickDailyBonus(BabyDogePawsGameRequestParam param) {
+        return ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
             try {
                 if ((boolean) babyDogePawsApi.getDailyBonuses(param).getOrDefault("has_available", false)) {
                     babyDogePawsApi.pickDailyBonus(param);
@@ -95,9 +97,10 @@ public class BabyDogePawsTask {
      * 定时采集促销奖励
      *
      * @param param {@link BabyDogePawsGameRequestParam}
+     * @return 任务
      */
-    private void schedulePickPromo(BabyDogePawsGameRequestParam param) {
-        BABY_DOGE_PAWS_SUCCESS_ONCE_TASK.scheduleAtFixedRate(() -> {
+    private ScheduledFuture<?> schedulePickPromo(BabyDogePawsGameRequestParam param) {
+        return ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
             try {
                 if (!(boolean) babyDogePawsApi.getPromo(param).getOrDefault("is_reward_taken", true)) {
                     babyDogePawsApi.pickPromo(param);
@@ -112,9 +115,10 @@ public class BabyDogePawsTask {
      * 定时挖矿
      *
      * @param param {@link BabyDogePawsGameRequestParam}
+     * @return 任务
      */
-    private void scheduleMine(BabyDogePawsGameRequestParam param) {
-        BABY_DOGE_PAWS_MINER.scheduleAtFixedRate(() -> {
+    private ScheduledFuture<?> scheduleMine(BabyDogePawsGameRequestParam param) {
+        return MINER.scheduleAtFixedRate(() -> {
             try {
                 babyDogePawsApi.mine(param);
             } catch (Throwable t) {
@@ -127,12 +131,13 @@ public class BabyDogePawsTask {
      * 定时升级卡片
      *
      * @param param {@link BabyDogePawsGameRequestParam}
+     * @return 任务
      */
-    private void scheduleUpgradeCard(BabyDogePawsGameRequestParam param) {
-        BABY_DOGE_PAWS_UPGRADE_CARD.scheduleAtFixedRate(() -> {
+    private ScheduledFuture<?> scheduleUpgradeCard(BabyDogePawsGameRequestParam param) {
+        return CARD_UP_GRADER.scheduleAtFixedRate(() -> {
             try {
-                BigDecimal balance = new BigDecimal(babyDogePawsApi.getMe(param).getOrDefault("balance", BigDecimal.ZERO).toString());
-                List<Map<String, Object>> cards = babyDogePawsApi.listCards(param);
+                var balance = new BigDecimal(babyDogePawsApi.getMe(param).getOrDefault("balance", BigDecimal.ZERO).toString());
+                var cards = babyDogePawsApi.listCards(param);
                 upgradeCard(param.user, balance, cards);
             } catch (Throwable t) {
                 LOGGER.error("[执行升级卡片task发生异常]-{}", param.user.phoneNumber, t);
@@ -144,9 +149,10 @@ public class BabyDogePawsTask {
      * 定时采集任务奖励
      *
      * @param param {@link BabyDogePawsGameRequestParam}
+     * @return 任务
      */
-    public void schedulePickChannel(BabyDogePawsGameRequestParam param) {
-        BABY_DOGE_PAWS_SUCCESS_ONCE_TASK.scheduleAtFixedRate(() -> {
+    public ScheduledFuture<?> schedulePickChannel(BabyDogePawsGameRequestParam param) {
+        return ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
             try {
                 @SuppressWarnings("unchecked")
                 var channels = (List<Map<String, Object>>) babyDogePawsApi.listChannels(param).getOrDefault("channels", new ArrayList<>());
@@ -154,7 +160,7 @@ public class BabyDogePawsTask {
                         .map(channel -> new Channel(channel.get("id").toString(), channel.get("invite_link").toString(), (boolean) channel.get("is_available")))
                         .filter(Channel::isAvailable)
                         .forEach(channel -> inviteLink(channel.inviteLink())
-                                .ifPresent((uri) -> CLIENT.sendAsync(HttpRequest.newBuilder().uri(uri).GET().build(), HttpResponse.BodyHandlers.discarding()).thenAccept(response -> {
+                                .ifPresent(uri -> CLIENT.sendAsync(HttpRequest.newBuilder().uri(uri).GET().build(), HttpResponse.BodyHandlers.discarding()).thenAccept(response -> {
                                     LOGGER.info("[点击邀请链接响应成功]:{}", channel.inviteLink());
                                     babyDogePawsApi.pickChannel(new PickChannel(param.user, channel));
                                 }).exceptionally(t -> {
@@ -201,8 +207,8 @@ public class BabyDogePawsTask {
 
     private Optional<URI> inviteLink(String link) {
         try {
-            URI uri = new URI(link);
-            String scheme = uri.getScheme();
+            var uri = new URI(link);
+            var scheme = uri.getScheme();
             if (scheme != null && (scheme.equals("http") || scheme.equals("https")) && uri.getHost() != null) {
                 return Optional.of(uri);
             } else {

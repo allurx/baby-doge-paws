@@ -1,10 +1,8 @@
 package red.zyc.babydogepaws.core;
 
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * @author allurx
@@ -57,7 +56,7 @@ public class BabyDogePaws {
      * 启动
      */
     public void bootstrap() {
-        users.parallelStream().forEach(user -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user)));
+        users.forEach(user -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user)));
     }
 
     /**
@@ -67,24 +66,26 @@ public class BabyDogePaws {
      * @param failNum 模拟玩的过程失败次数，提供容错性
      */
     public void playBabyDogePaws(BabyDogePawsUser user, int failNum) {
-        try (Chrome chrome = Chrome.builder()
+        try (var chrome = Chrome.builder()
                 .mode(Mode.ATTACH)
                 .addArgs("--user-data-dir=" + user.chromeDataDir(), "--headless=new")
                 .build()) {
 
-            WebDriver webDriver = chrome.webDriver();
+            var webDriver = chrome.webDriver();
+            var waiter = new WebDriverWait(webDriver, Duration.ofSeconds(60L), Duration.ofSeconds(1L));
+            var javascriptExecutor = (JavascriptExecutor) webDriver;
+
+            // 加载页面
             webDriver.get(TELEGRAM_WEB_URL);
-            FluentWait<WebDriver> waiter = new WebDriverWait(webDriver, Duration.ofSeconds(30L), Duration.ofSeconds(1L));
-            JavascriptExecutor executor = (JavascriptExecutor) webDriver;
 
             // 等待页面加载完毕
             Poller.<JavascriptExecutor, Boolean>builder()
-                    .duration(20000L)
-                    .interval(500L)
-                    .timeUnit(TimeUnit.MILLISECONDS)
-                    .function((e) -> (Boolean) e.executeScript(Javascript.WINDOW_LOADED))
-                    .input(executor)
-                    .predicate((r) -> r)
+                    .duration(60L)
+                    .interval(1L)
+                    .timeUnit(TimeUnit.SECONDS)
+                    .function(e -> (Boolean) e.executeScript(Javascript.TELEGRAM_PAGE_LOADED))
+                    .input(javascriptExecutor)
+                    .predicate(r -> r)
                     .build()
                     .throwWhenMiss(() -> new BabyDogePawsException("telegram页面加载失败"));
 
@@ -96,11 +97,11 @@ public class BabyDogePaws {
 
             // 第一次play会出现一个confirm按钮
             Poller.<JavascriptExecutor, WebElement>builder()
-                    .duration(6000L)
+                    .duration(3000L)
                     .interval(500L)
                     .timeUnit(TimeUnit.MILLISECONDS)
-                    .function((e) -> (WebElement) e.executeScript("return Array.from(document.querySelectorAll(\"button\")).find(button => button.textContent.includes(\"Confirm\"))"))
-                    .input(executor)
+                    .function(e -> (WebElement) e.executeScript(ElementPosition.BABY_DAGE_PAWS_WEB_APP_CONFIRM_BUTTON))
+                    .input(javascriptExecutor)
                     .predicate(Objects::nonNull)
                     .build()
                     .poll()
@@ -108,43 +109,44 @@ public class BabyDogePaws {
 
             // 切换到游戏加载后所在的iframe
             waiter.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(ElementPosition.BABY_DAGE_PAWS_WEB_APP));
-            WebDriver w = webDriver.switchTo().parentFrame();
+            var w = webDriver.switchTo().parentFrame();
 
             // 从iframe的src中提取游戏所需的authParam
-            String babyDogePawsWebAppUrl = w.findElement(ElementPosition.BABY_DAGE_PAWS_WEB_APP).getAttribute("src");
-            String decode = URLDecoder.decode(babyDogePawsWebAppUrl.substring(BABY_DOGE_PAWS_AUTH_PARAMS_LOCATION_PREFIX.length()), StandardCharsets.UTF_8);
-            String authParam = Arrays.stream(decode.split("&"))
-                    .map((s) -> s.split("="))
-                    .filter((arr) -> AUTH_PARAM_NAMES.contains(arr[0]))
-                    .map((arr) -> arr[0] + "=" + arr[1])
+            var babyDogePawsWebAppUrl = w.findElement(ElementPosition.BABY_DAGE_PAWS_WEB_APP).getAttribute("src");
+            var decode = URLDecoder.decode(babyDogePawsWebAppUrl.substring(BABY_DOGE_PAWS_AUTH_PARAMS_LOCATION_PREFIX.length()), StandardCharsets.UTF_8);
+            var authParam = Arrays.stream(decode.split("&"))
+                    .map(s -> s.split("="))
+                    .filter(arr -> AUTH_PARAM_NAMES.contains(arr[0]))
+                    .map(arr -> arr[0] + "=" + arr[1])
                     .reduce("", (s1, s2) -> s1 + "&" + s2).substring(1)
                     .describeConstable()
                     .orElseThrow(() -> new BabyDogePawsException("BabyDogePaws授权参数为null"));
 
+            // 其它线程执行任务时就能感知到最新的authParam了
             user.authParam = authParam;
 
             // 保存或更新登录信息
             loginInfoMapper.saveOrUpdateLoginInfo(user.id, LocalDateTime.now(), authParam);
 
-            // 启动所有定时任务
-            babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user));
-
             LOGGER.info("[游戏登录成功]-{}:{}", user.phoneNumber, authParam);
 
         } catch (Throwable t) {
 
-            int currentFailNum = ++failNum;
+            var currentFailNum = ++failNum;
             LOGGER.error(String.format("[游戏登录失败]-%s-%s:", user.phoneNumber, currentFailNum), t);
 
-            Mails.sendTextMail(user.phoneNumber + "游戏登录失败", Commons.convertThrowableToString(t));
-
-            // 游戏登录失败3次放弃
+            // 游戏登录失败3次则取消所有定时任务
             if (currentFailNum == 3) {
+                user.cancelAllTask();
                 Mails.sendTextMail(user.phoneNumber + "游戏登录失败", Commons.convertThrowableToString(t));
             } else {
 
+                // 通过try with resource语法关闭chrome和webdriver进程可能需要时间
+                LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(3));
+
                 // 重新尝试
                 playBabyDogePaws(user, currentFailNum);
+
             }
         }
     }

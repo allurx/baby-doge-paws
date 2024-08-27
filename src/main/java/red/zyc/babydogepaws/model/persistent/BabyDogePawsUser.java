@@ -3,8 +3,11 @@ package red.zyc.babydogepaws.model.persistent;
 import red.zyc.babydogepaws.common.Functions;
 import red.zyc.babydogepaws.common.util.ApplicationContextHolder;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ScheduledFuture;
 import java.util.function.Function;
 
 /**
@@ -27,7 +30,10 @@ public class BabyDogePawsUser {
     public String xApiKey;
     public String friendNum;
     public volatile String authParam;
+
     public volatile Map<String, Object> data;
+    public volatile List<ScheduledFuture<?>> tasks = new ArrayList<>();
+    public volatile boolean tasksCanceled = false;
 
     public String xApiKey() {
         return getUserProperty("access_token", Object::toString, "");
@@ -42,5 +48,13 @@ public class BabyDogePawsUser {
 
     public String chromeDataDir() {
         return ApplicationContextHolder.getProperty("chrome.root-data-dir", String.class) + areaCode + "-" + phoneNumber;
+    }
+
+    /**
+     * 取消用户的所有任务
+     */
+    public void cancelAllTask() {
+        tasks.forEach(scheduledFuture -> scheduledFuture.cancel(false));
+        tasksCanceled = true;
     }
 }
