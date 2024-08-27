@@ -15,4 +15,4 @@ spring:
       connection-timeout: 30000
       connection-test-query: SELECT 1
 chrome:
-  root-data-dir: C:\chrome-user-data\
+  root-data-dir: E:\chrome-user-data\
