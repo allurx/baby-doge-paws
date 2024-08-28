@@ -151,7 +151,7 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      * @return 任务
      */
-    public ScheduledFuture<?> schedulePickChannel(BabyDogePawsGameRequestParam param) {
+    private ScheduledFuture<?> schedulePickChannel(BabyDogePawsGameRequestParam param) {
         return ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
             try {
                 @SuppressWarnings("unchecked")

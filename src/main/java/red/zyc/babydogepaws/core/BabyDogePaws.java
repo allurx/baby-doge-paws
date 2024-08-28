@@ -6,12 +6,12 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.common.Poller;
 import red.zyc.babydogepaws.common.util.Commons;
 import red.zyc.babydogepaws.common.util.Mails;
 import red.zyc.babydogepaws.dao.LoginInfoMapper;
+import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsException;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
@@ -41,22 +41,23 @@ public class BabyDogePaws {
     private static final List<String> AUTH_PARAM_NAMES = List.of("query_id", "user", "auth_date", "hash");
     private static final String BABY_DOGE_PAWS_AUTH_PARAMS_LOCATION_PREFIX = "https://babydogeclikerbot.com/#tgWebAppData=";
 
+    private final UserMapper userMapper;
     private final LoginInfoMapper loginInfoMapper;
     private final BabyDogePawsTask babyDogePawsTask;
-    private final List<BabyDogePawsUser> users;
 
-    public BabyDogePaws(LoginInfoMapper loginInfoMapper, BabyDogePawsTask babyDogePawsTask,
-                        @Qualifier("users") List<BabyDogePawsUser> users) {
+    public BabyDogePaws(UserMapper userMapper,
+                        LoginInfoMapper loginInfoMapper,
+                        BabyDogePawsTask babyDogePawsTask) {
+        this.userMapper = userMapper;
         this.loginInfoMapper = loginInfoMapper;
         this.babyDogePawsTask = babyDogePawsTask;
-        this.users = users;
     }
 
     /**
      * 启动
      */
     public void bootstrap() {
-        users.forEach(user -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user)));
+        userMapper.listBabyDogeUsers().forEach(user -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user)));
     }
 
     /**

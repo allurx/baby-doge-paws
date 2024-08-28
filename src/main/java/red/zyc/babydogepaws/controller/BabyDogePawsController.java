@@ -1,12 +1,18 @@
 package red.zyc.babydogepaws.controller;
 
-import org.springframework.beans.factory.annotation.Qualifier;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import red.zyc.babydogepaws.core.BabyDogePawsApi;
-import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
+import red.zyc.babydogepaws.core.BabyDogePawsTask;
+import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
+import red.zyc.babydogepaws.model.response.BabyDogePawsUserVo;
+import red.zyc.babydogepaws.model.response.base.Response;
+import red.zyc.babydogepaws.model.response.base.ResponseMessage;
+import red.zyc.toolkit.json.Json;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -15,64 +21,65 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
+
+import static red.zyc.babydogepaws.model.response.base.Response.ok;
 
 /**
  * @author allurx
  */
+@Tag(name = "BabyDogePaws", description = "BabyDogePaws Api")
 @RestController
-@RequestMapping
 public class BabyDogePawsController {
 
-    private final List<BabyDogePawsUser> users;
+
+    private final UserMapper userMapper;
     private final BabyDogePawsApi babyDogePawsApi;
+    private final BabyDogePawsTask babyDogePawsTask;
 
-    public BabyDogePawsController(@Qualifier("users") List<BabyDogePawsUser> users,
-                                  BabyDogePawsApi babyDogePawsApi) {
-        this.users = users;
+    public BabyDogePawsController(UserMapper userMapper, BabyDogePawsApi babyDogePawsApi, BabyDogePawsTask babyDogePawsTask) {
+        this.userMapper = userMapper;
         this.babyDogePawsApi = babyDogePawsApi;
+        this.babyDogePawsTask = babyDogePawsTask;
     }
 
-    /**
-     * 获取用户信息
-     *
-     * @param phoneNumber 用户手机号码
-     * @return 用户信息
-     */
+
+    @Operation(summary = "获取用户信息")
     @GetMapping("/getUser")
-    public BabyDogePawsUser getUser(String phoneNumber) {
-        return users.stream()
-                .filter(user -> Objects.equals(user.phoneNumber, phoneNumber))
-                .findFirst()
-                .orElse(null);
+    public Response<BabyDogePawsUserVo> getUser(//@Parameter(ref = PARAMETER_COMPONENT_USER_PHONE_NUMBER)
+                                                String phoneNumber) {
+        return ok(Optional.ofNullable(userMapper.getBabyDogeUser(phoneNumber))
+                .map(user -> Json.JACKSON_OPERATOR.copyProperties(userMapper.getBabyDogeUser(phoneNumber), BabyDogePawsUserVo.class))
+                .orElse(null));
     }
 
-    /**
-     * 获取用户好友信息
-     *
-     * @param phoneNumber 用户手机号码
-     * @return 用户好友信息
-     */
+    @Operation(summary = "获取用户好友信息")
     @GetMapping("/listFriends")
-    public Map<String, Object> listFriends(String phoneNumber) {
-        return users.stream()
-                .filter(user -> Objects.equals(user.phoneNumber, phoneNumber))
-                .findFirst()
-                .map(user -> babyDogePawsApi.listFriends(new BabyDogePawsGameRequestParam(user)))
-                .orElse(new HashMap<>());
+    public Response<Map<String, Object>> listFriends(//@Parameter(ref = PARAMETER_COMPONENT_USER_PHONE_NUMBER)
+                                                     String phoneNumber) {
+        return ok(Optional.ofNullable(userMapper.getBabyDogeUser(phoneNumber))
+                .map(BabyDogePawsGameRequestParam::new)
+                .map(babyDogePawsApi::listFriends)
+                .orElse(new HashMap<>()));
     }
 
-    /**
-     * 获取用户所有卡的升级信息
-     *
-     * @param phoneNumber 用户手机号码
-     * @return 卡的升级信息
-     */
+    @Operation(summary = "启动用户所有定时任务")
+    @PostMapping("/bootstrap")
+    public Response<?> bootstrap(//@Parameter(ref = PARAMETER_COMPONENT_USER_PHONE_NUMBER)
+                                 String phoneNumber) {
+        return Optional.ofNullable(userMapper.getBabyDogeUser(phoneNumber))
+                .map(user -> {
+                    babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user));
+                    return ok();
+                })
+                .orElse(ok(ResponseMessage.MISSING_USER));
+    }
+
+    @Operation(summary = "获取用户所有卡片的升级信息")
     @GetMapping("/listCardUpgradeInfo")
-    public List<Map<String, String>> listCardUpgradeInfo(String phoneNumber) {
-        return users.stream()
-                .filter(user -> Objects.equals(user.phoneNumber, phoneNumber))
-                .findFirst()
+    public Response<List<Map<String, String>>> listCardUpgradeInfo(//@Parameter(ref = PARAMETER_COMPONENT_USER_PHONE_NUMBER)
+                                                                   String phoneNumber) {
+        return ok(Optional.ofNullable(userMapper.getBabyDogeUser(phoneNumber))
                 .map(BabyDogePawsGameRequestParam::new)
                 .map(babyDogePawsApi::listCards)
                 .map(cards -> cards.stream()
@@ -98,6 +105,6 @@ public class BabyDogePawsController {
                         })
                         .toList()
                 )
-                .orElse(new ArrayList<>());
+                .orElse(new ArrayList<>()));
     }
 }

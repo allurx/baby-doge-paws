@@ -1,9 +1,13 @@
 package red.zyc.babydogepaws.common.util;
 
+import jakarta.servlet.ServletResponse;
 import red.zyc.babydogepaws.common.constant.Constants;
+import red.zyc.babydogepaws.model.response.base.Response;
 import red.zyc.toolkit.core.reflect.TypeToken;
 
+import java.io.IOException;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import static red.zyc.toolkit.json.Json.JACKSON_OPERATOR;
@@ -49,12 +53,25 @@ public final class Https {
     }
 
     /**
+     * 将{@link Response}作为json字符串写入{@link ServletResponse}
+     *
+     * @param servletResponse {@link ServletResponse}
+     * @param response        {@link Response}
+     * @throws IOException 异常
+     */
+    public static void response(ServletResponse servletResponse, Response<?> response) throws IOException {
+        servletResponse.setContentType(Constants.JSON_CONTENT_TYPE);
+        servletResponse.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        servletResponse.getWriter().write(JACKSON_OPERATOR.toJsonString(response));
+    }
+
+    /**
      * 尝试将body作为json字符串进行反序列化
      *
      * @param body 响应body
      * @return 反序列化结果
      */
-    static Object tryConvert(String body) {
+    private static Object tryConvert(String body) {
         try {
             return JACKSON_OPERATOR.fromJsonString(body, Constants.OBJECT_DATA_TYPE);
         } catch (Throwable t) {

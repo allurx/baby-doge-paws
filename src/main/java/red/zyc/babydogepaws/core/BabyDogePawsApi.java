@@ -97,17 +97,18 @@ public class BabyDogePawsApi {
 
                         } else {
                             LOGGER.info("[授权成功]-{}:{}:{}", param.user.phoneNumber, param.user.authParam, Https.formatJsonResponse(response, true));
-                            return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE).map((authData) -> {
+                            return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE).map(authData -> {
 
-                                // 更新授权数据
+                                // 更新游戏数据
                                 param.user.data = authData;
+                                param.user.xApiKey = String.valueOf(authData.get("access_token"));
 
                                 // 保存或更新游戏账户的一些信息
                                 var friends = listFriends(param);
                                 userMapper.saveOrUpdateUser(
                                         param.user.id,
                                         String.valueOf(friends.get("copy_link")),
-                                        param.user.xApiKey(),
+                                        param.user.xApiKey,
                                         (Integer) friends.get("friends_count"));
                                 return authData;
                             }).orElseThrow(() -> new BabyDogePawsApiException("authorize响应结果为空"));
@@ -343,7 +344,7 @@ public class BabyDogePawsApi {
                         LOGGER.warn("[获取好友列表失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? listFriends(param) : new HashMap<>();
                     } else {
-                        LOGGER.info("[获取好友列表成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
+                        LOGGER.info("[获取好友列表成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, false));
                         return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("listFriends响应结果为空"));
                     }

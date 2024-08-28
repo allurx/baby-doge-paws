@@ -18,5 +18,7 @@ public final class Constants {
     public static final TypeToken<List<Map<String, Object>>> LIST_OBJECT_DATA_TYPE = new TypeToken<List<Map<String, Object>>>() {
     };
 
+    public static final String JSON_CONTENT_TYPE = "application/json";
+
 
 }
