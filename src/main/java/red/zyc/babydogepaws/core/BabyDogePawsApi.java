@@ -3,6 +3,7 @@ package red.zyc.babydogepaws.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import red.zyc.babydogepaws.common.NamedThreadFactory;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.common.util.ApplicationContextHolder;
 import red.zyc.babydogepaws.common.util.Https;
@@ -21,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static red.zyc.babydogepaws.common.constant.BabyDogePawsGame.Request.*;
@@ -34,7 +36,10 @@ import static red.zyc.babydogepaws.common.constant.BabyDogePawsGame.Request.*;
 public class BabyDogePawsApi {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePawsApi.class);
-    private static final HttpClient CLIENT = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30L)).build();
+    private static final HttpClient CLIENT = HttpClient.newBuilder().
+            connectTimeout(Duration.ofSeconds(30L))
+            .executor(Executors.newThreadPerTaskExecutor(new NamedThreadFactory("BabyDogePawsApiRequester", true)))
+            .build();
     private static final ConcurrentHashMap<Integer, ReentrantLock> USER_LOCKS = new ConcurrentHashMap<>();
     private final UserMapper userMapper;
 
