@@ -33,6 +33,12 @@ public class TODO {
     /**
      * <ol>
      *     <li>
+     *         swagger-ui接口请求参数无法复用Components
+     *     </li>
+     *     <li>
+     *         过滤器无法处理controller请求参数不正确时抛出的异常，spring解析参数发生在过滤器执行前？？？
+     *     </li>
+     *     <li>
      *         是否可以复用一个webdriver
      *     </li>
      *     <li>
