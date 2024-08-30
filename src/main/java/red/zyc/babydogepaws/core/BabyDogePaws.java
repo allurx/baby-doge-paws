@@ -47,7 +47,7 @@ public class BabyDogePaws {
     private final BabyDogePawsTask babyDogePawsTask;
 
     @Value("${baby-doge-paws.bootstrap}")
-    private boolean bootstrap;
+    private List<String> bootstrap;
 
     public BabyDogePaws(UserMapper userMapper,
                         LoginInfoMapper loginInfoMapper,
@@ -61,8 +61,10 @@ public class BabyDogePaws {
      * 启动
      */
     public void bootstrap() {
-        if (bootstrap) {
+        if (bootstrap.isEmpty()) {
             userMapper.listBabyDogeUsers().forEach(user -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user)));
+        } else {
+            bootstrap.stream().map(userMapper::getBabyDogeUser).forEach(user -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user)));
         }
     }
 

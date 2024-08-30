@@ -17,4 +17,4 @@ spring:
 baby-doge-paws:
   chrome:
     root-data-dir: E:\chrome-user-data\
-  bootstrap: true
+  bootstrap: []

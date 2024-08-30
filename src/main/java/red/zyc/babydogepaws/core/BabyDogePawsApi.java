@@ -220,10 +220,10 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(UPGRADE_CARD.build(upgradeCard), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApply(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[卡片升级失败]-{}:{}:{}:{}:{}", upgradeCard.user.phoneNumber, upgradeCard.balance, upgradeCard.card.id(), upgradeCard.card.upgradeCost(), Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[卡片升级失败]-{}:{}:{}:{}:{}", upgradeCard.user.phoneNumber, upgradeCard.balance, upgradeCard.card.cardId, upgradeCard.upgradeInfo.cost, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(upgradeCard, response.statusCode()) ? upgradeCard(upgradeCard) : new HashMap<>();
                     } else {
-                        LOGGER.info("[卡片升级成功]-{}:{}:{}:{}:{}", upgradeCard.user.phoneNumber, upgradeCard.balance, upgradeCard.card.id(), upgradeCard.card.upgradeCost(), Https.formatJsonResponse(response, false));
+                        LOGGER.info("[卡片升级成功]-{}:{}:{}:{}:{}", upgradeCard.user.phoneNumber, upgradeCard.balance, upgradeCard.card.cardId, upgradeCard.upgradeInfo.cost, Https.formatJsonResponse(response, false));
                         return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("cards响应结果为空"));
                     }

@@ -85,7 +85,7 @@ public final class BabyDogePawsGame {
                         .uri(URI.create("https://backend.babydogepawsbot.com/cards"))
                         .header("content-type", "application/json")
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
-                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("id", upgradeCard.card.id()))))
+                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("id", upgradeCard.card.cardId))))
                         .build();
             }
         },

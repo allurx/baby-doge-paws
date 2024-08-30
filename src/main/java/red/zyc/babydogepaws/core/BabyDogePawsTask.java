@@ -2,13 +2,15 @@ package red.zyc.babydogepaws.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.common.NamedThreadFactory;
+import red.zyc.babydogepaws.dao.CardMapper;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
+import red.zyc.babydogepaws.model.persistent.Card;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.model.request.PickChannel;
 import red.zyc.babydogepaws.model.request.UpgradeCard;
-import red.zyc.babydogepaws.model.response.Card;
 import red.zyc.babydogepaws.model.response.Channel;
 
 import java.math.BigDecimal;
@@ -27,6 +29,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static red.zyc.toolkit.json.Json.JACKSON_OPERATOR;
+
 /**
  * @author allurx
  */
@@ -41,9 +45,14 @@ public class BabyDogePawsTask {
     private static final ScheduledThreadPoolExecutor CARD_UP_GRADER = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("CardUpGrader", true));
     private static final ScheduledThreadPoolExecutor ONE_TIME_TASK_HITTER = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("OneTimeMissionHitter", true));
     private final BabyDogePawsApi babyDogePawsApi;
+    private final CardMapper cardMapper;
 
-    public BabyDogePawsTask(BabyDogePawsApi babyDogePawsApi) {
+    @Value("${baby-doge-paws.card-upgrade-info-tracker}")
+    private List<String> trackers;
+
+    public BabyDogePawsTask(BabyDogePawsApi babyDogePawsApi, CardMapper cardMapper) {
         this.babyDogePawsApi = babyDogePawsApi;
+        this.cardMapper = cardMapper;
     }
 
     /**
@@ -182,15 +191,30 @@ public class BabyDogePawsTask {
      */
     @SuppressWarnings("unchecked")
     private void upgradeCard(BabyDogePawsUser user, BigDecimal balance, List<Map<String, Object>> cards) {
-        cards.stream().flatMap(o -> ((List<Map<String, Object>>) o.get("cards")).stream())
-                .filter(o -> (Boolean) o.get("is_available"))
-                .sorted(Comparator.<Map<String, Object>, BigDecimal>comparing(card -> new BigDecimal(card.get("upgrade_cost").toString()).divide(new BigDecimal(card.get("farming_upgrade").toString()), 2, RoundingMode.HALF_UP))
-                        .thenComparing(card -> new BigDecimal(card.get("upgrade_cost").toString())))
-                .map(card -> new Card((Integer) card.get("id"), new BigDecimal(card.get("upgrade_cost").toString()), new BigDecimal(card.get("farming_upgrade").toString())))
-                .findFirst()
-                .ifPresent(card -> {
-                    if (canUpgradeCard(balance, card)) {
-                        var map = babyDogePawsApi.upgradeCard(new UpgradeCard(user, balance, card));
+        cards.stream()
+                .flatMap(o -> ((List<Map<String, Object>>) o.get("cards")).stream().peek(card -> card.put("category_name", o.get("name"))))
+                .map(cardMap -> new UpgradeCard(
+                        user,
+                        balance,
+                        JACKSON_OPERATOR.copyProperties(cardMap, Card.class),
+                        JACKSON_OPERATOR.copyProperties(cardMap, UpgradeCard.UpgradeInfo.class),
+                        (Boolean) cardMap.get("is_available")))
+
+                // 用新号来追踪卡片升级信息
+                .peek(upgradeCard -> trackers.stream()
+                        .filter(s -> s.equals(user.phoneNumber))
+                        .forEach(s -> cardMapper.saveOrUpdateCard(upgradeCard.card, upgradeCard.upgradeInfo)))
+
+                // 注意：available变成true后，之前存在的requirement就会变成null
+                .filter(upgradeCard -> upgradeCard.available)
+
+                // 先按照价格升序，再按照花费升序，
+                // 尽快增加pph（升级pph优先）
+                .min(Comparator.<UpgradeCard, BigDecimal>comparing(upgradeCard -> upgradeCard.upgradeInfo.cost.divide(upgradeCard.upgradeInfo.profit, 2, RoundingMode.HALF_UP))
+                        .thenComparing(upgradeCard -> upgradeCard.upgradeInfo.cost))
+                .ifPresent(upgradeCard -> {
+                    if (canUpgradeCard(upgradeCard)) {
+                        var map = babyDogePawsApi.upgradeCard(upgradeCard);
                         var latestBalance = new BigDecimal(map.getOrDefault("balance", BigDecimal.ZERO).toString());
                         var latestCards = (List<Map<String, Object>>) map.getOrDefault("cards", new ArrayList<>());
                         upgradeCard(user, latestBalance, latestCards);
@@ -198,11 +222,20 @@ public class BabyDogePawsTask {
                 });
     }
 
-    private boolean canUpgradeCard(BigDecimal balance, Card card) {
-        var price = card.upgradeCost().divide(card.farmingUpgrade(), 2, RoundingMode.HALF_UP);
-        return balance.compareTo(card.upgradeCost()) >= 0 &&
-                price.compareTo(BigDecimal.valueOf(1517.26)) < 0 &&
-                card.upgradeCost().compareTo(BigDecimal.valueOf(5000000)) <= 0;
+    private boolean canUpgradeCard(UpgradeCard upgradeCard) {
+
+        UpgradeCard.UpgradeInfo upgradeInfo = upgradeCard.upgradeInfo;
+
+        // 同时满足所有条件才能升级
+        return
+                // 余额比卡片升级所需的花费多
+                upgradeCard.balance.compareTo(upgradeInfo.cost) >= 0 &&
+
+                        // 卡片升级的价格满足一定条件
+                        upgradeInfo.cost.divide(upgradeInfo.profit, 2, RoundingMode.HALF_UP).compareTo(BigDecimal.valueOf(1517.26)) < 0 &&
+
+                        // 卡片升级所需的花费不超过设置的阈值
+                        upgradeInfo.cost.compareTo(BigDecimal.valueOf(10000000)) <= 0;
     }
 
     private Optional<URI> inviteLink(String link) {

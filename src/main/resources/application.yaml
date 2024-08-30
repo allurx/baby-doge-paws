@@ -7,3 +7,6 @@ mybatis:
   mapper-locations: classpath:mapper/*.xml
   configuration:
     map-underscore-to-camel-case: true
+baby-doge-paws:
+  # 用来追踪所有卡片升级信息的用户
+  card-upgrade-info-tracker: 82155524679
