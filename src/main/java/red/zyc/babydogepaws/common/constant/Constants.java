@@ -20,5 +20,7 @@ public final class Constants {
 
     public static final String JSON_CONTENT_TYPE = "application/json";
 
+    public static final Void VOID = null;
+
 
 }

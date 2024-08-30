@@ -6,6 +6,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.common.Poller;
 import red.zyc.babydogepaws.common.util.Commons;
@@ -45,6 +46,9 @@ public class BabyDogePaws {
     private final LoginInfoMapper loginInfoMapper;
     private final BabyDogePawsTask babyDogePawsTask;
 
+    @Value("${baby-doge-paws.bootstrap}")
+    private boolean bootstrap;
+
     public BabyDogePaws(UserMapper userMapper,
                         LoginInfoMapper loginInfoMapper,
                         BabyDogePawsTask babyDogePawsTask) {
@@ -57,7 +61,9 @@ public class BabyDogePaws {
      * 启动
      */
     public void bootstrap() {
-        userMapper.listBabyDogeUsers().forEach(user -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user)));
+        if (bootstrap) {
+            userMapper.listBabyDogeUsers().forEach(user -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user)));
+        }
     }
 
     /**

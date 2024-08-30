@@ -33,7 +33,7 @@ public class BabyDogePawsUser {
     public volatile boolean tasksCanceled = false;
 
     public String chromeDataDir() {
-        return ApplicationContextHolder.getProperty("chrome.root-data-dir", String.class) + areaCode + "-" + phoneNumber;
+        return ApplicationContextHolder.getProperty("baby-doge-paws.chrome.root-data-dir", String.class) + areaCode + "-" + phoneNumber;
     }
 
     /**
