@@ -93,9 +93,7 @@ public class BabyDogePawsTask {
     private ScheduledFuture<?> schedulePickDailyBonus(BabyDogePawsGameRequestParam param) {
         return ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
             try {
-                if ((boolean) babyDogePawsApi.getDailyBonuses(param).getOrDefault("has_available", false)) {
-                    babyDogePawsApi.pickDailyBonus(param);
-                }
+                babyDogePawsApi.pickDailyBonus(param);
             } catch (Throwable t) {
                 LOGGER.error("[执行采集每日奖励task发生异常]-{}", param.user.phoneNumber, t);
             }
@@ -111,9 +109,7 @@ public class BabyDogePawsTask {
     private ScheduledFuture<?> schedulePickPromo(BabyDogePawsGameRequestParam param) {
         return ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
             try {
-                if (!(boolean) babyDogePawsApi.getPromo(param).getOrDefault("is_reward_taken", true)) {
-                    babyDogePawsApi.pickPromo(param);
-                }
+                babyDogePawsApi.pickPromo(param);
             } catch (Throwable t) {
                 LOGGER.error("[执行采集促销奖励task发生异常]-{}", param.user.phoneNumber, t);
             }
