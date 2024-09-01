@@ -8,12 +8,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.RequestEntity;
+import red.zyc.babydogepaws.common.NamedThreadFactory;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.common.util.Https;
 import red.zyc.babydogepaws.exception.BabyDogePawsApiException;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.toolkit.json.Json;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -23,6 +25,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 import static red.zyc.toolkit.json.Json.JACKSON_OPERATOR;
 
@@ -33,7 +36,10 @@ import static red.zyc.toolkit.json.Json.JACKSON_OPERATOR;
 public class BabyDogePawsTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePawsTest.class);
-    private static final HttpClient CLIENT = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30L)).build();
+    private static final HttpClient CLIENT = HttpClient.newBuilder().
+            connectTimeout(Duration.ofSeconds(30L))
+            .executor(Executors.newThreadPerTaskExecutor(new NamedThreadFactory("BabyDogePawsApiRequester", true)))
+            .build();
 
     @Autowired
     private TestRestTemplate testRestTemplate;
@@ -81,9 +87,9 @@ public class BabyDogePawsTest {
 
     }
 
-    public static void main(String[] args)throws Exception {
+    void test1() throws IOException {
         Path root = Path.of("D:\\chrome-user-data-new");
-        StringBuilder builder=new StringBuilder(
+        StringBuilder builder = new StringBuilder(
                 "insert into telegram_user(country,area_code,phone_number,source,banned,password_reset,email_reset) values ");
         Files.walk(root, 1).filter(path -> !path.equals(root) && path.toFile().isDirectory())
                 .forEach(path -> {
@@ -103,9 +109,72 @@ public class BabyDogePawsTest {
                             .append(0)
                             .append(")")
                             .append(",");
-        });
+                });
         System.out.println(builder);
+    }
 
+
+    static void pickDailyBonus(String xApiKey) {
+        var data = CLIENT.sendAsync(HttpRequest.newBuilder()
+                        .uri(URI.create("https://backend.babydogepawsbot.com/pickDailyBonus"))
+                        .header("x-api-key", xApiKey)
+                        .POST(HttpRequest.BodyPublishers.ofString(""))
+                        .build(), HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        .orElseThrow(() -> new BabyDogePawsApiException("pickDailyBonus响应结果为空")))
+                .join();
+
+        LOGGER.info("pickDailyBonus: {}", JACKSON_OPERATOR.toJsonString(data));
+    }
+
+    static void mine(String xApiKey) {
+        var data = CLIENT.sendAsync(HttpRequest.newBuilder()
+                        .uri(URI.create("https://backend.babydogepawsbot.com/mine"))
+                        .header("content-type", "application/json")
+                        .header("x-api-key", xApiKey)
+                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("count", BabyDogePawsUser.MINE_COUNT))))
+                        .build(), HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        .orElseThrow(() -> new BabyDogePawsApiException("mine响应结果为空")))
+                .join();
+
+        LOGGER.info("mine: {}", JACKSON_OPERATOR.toJsonString(data));
+    }
+
+    static void upgradeCard(String xApiKey,int cardId) {
+        var data = CLIENT.sendAsync(HttpRequest.newBuilder()
+                        .uri(URI.create("https://backend.babydogepawsbot.com/cards"))
+                        .header("content-type", "application/json")
+                        .header("x-api-key", xApiKey)
+                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("id", cardId))))
+                        .build(), HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        .orElseThrow(() -> new BabyDogePawsApiException("upgradeCard响应结果为空")))
+                .join();
+
+        LOGGER.info("upgradeCard: {}", JACKSON_OPERATOR.toJsonString(data));
+    }
+
+    static void getMe(String xApiKey) {
+        var data = CLIENT.sendAsync(HttpRequest.newBuilder()
+                        .uri(URI.create("https://backend.babydogepawsbot.com/getMe"))
+                        .header("x-api-key", xApiKey)
+                        .GET()
+                        .build(), HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        .orElseThrow(() -> new BabyDogePawsApiException("getMe响应结果为空")))
+                .join();
+
+        LOGGER.info("getMe: {}", JACKSON_OPERATOR.toJsonString(data));
+    }
+
+    public static void main(String[] args) throws Exception {
+        String key="d0275d3ab943ee7f9ef1bd0957973b75357acc621cea2057ec59be1cdb777886";
+        getMe(key);
+        mine(key);
+        pickDailyBonus(key);
+        upgradeCard(key,17);
+        getMe(key);
 
     }
 
