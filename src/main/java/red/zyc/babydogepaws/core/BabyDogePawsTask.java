@@ -225,13 +225,14 @@ public class BabyDogePawsTask {
         // 同时满足所有条件才能升级
         return
                 // 余额比卡片升级所需的花费多
-                upgradeCard.balance.compareTo(upgradeInfo.cost) >= 0 &&
+                upgradeCard.balance.compareTo(upgradeInfo.cost) >= 0
 
                         // 卡片升级的价格满足一定条件
-                        upgradeInfo.cost.divide(upgradeInfo.profit, 2, RoundingMode.HALF_UP).compareTo(BigDecimal.valueOf(1517.26)) < 0 &&
+                        && upgradeInfo.cost.divide(upgradeInfo.profit, 2, RoundingMode.HALF_UP).compareTo(BigDecimal.valueOf(1517.26)) < 0;
+
 
                         // 卡片升级所需的花费不超过设置的阈值
-                        upgradeInfo.cost.compareTo(BigDecimal.valueOf(10000000)) <= 0;
+                        // && upgradeInfo.cost.compareTo(BigDecimal.valueOf(10000000)) <= 0;
     }
 
     private Optional<URI> inviteLink(String link) {
