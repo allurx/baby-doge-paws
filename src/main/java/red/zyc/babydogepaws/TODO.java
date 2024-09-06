@@ -3,7 +3,6 @@ package red.zyc.babydogepaws;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import red.zyc.babydogepaws.common.NamedThreadFactory;
-import red.zyc.babydogepaws.common.poller.Poller;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.core.BabyDogePawsApi;
 
@@ -16,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.function.Supplier;
 
 import static red.zyc.toolkit.json.Json.JACKSON_OPERATOR;
 
@@ -43,9 +41,6 @@ public class TODO {
      *     </li>
      *     <li>
      *         {@link BabyDogePawsApi}方法入参优化，应该是最底层的外部接口实际入参
-     *     </li>
-     *     <li>
-     *         {@link Poller#pollThrow(Supplier)}优化
      *     </li>
      *     <li>
      *         优化挖矿间隔和次数计算逻辑

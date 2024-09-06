@@ -81,7 +81,7 @@ public class BabyDogePaws {
     public void playBabyDogePaws(BabyDogePawsUser user, int failNum) {
         try (var chrome = Chrome.builder()
                 .mode(Mode.ATTACH)
-                .addArgs("--user-data-dir=" + user.chromeDataDir())
+                .addArgs("--user-data-dir=" + user.chromeDataDir(), "--headless=new")
                 .build()) {
 
             var webDriver = chrome.webDriver();
@@ -111,7 +111,7 @@ public class BabyDogePaws {
 
             // 第一次play会出现一个confirm按钮
             Poller.<JavascriptExecutor, WebElement>builder()
-                    .timing(Duration.ofSeconds(2), Duration.ofMillis(500))
+                    .timing(Duration.ofSeconds(3), Duration.ofMillis(500))
                     .<CallableFunction<JavascriptExecutor, WebElement>>execute(jsExecutor, o -> executeScript(o, RETURN_BABY_DAGE_PAWS_WEB_APP_CONFIRM_BUTTON))
                     .predicate(Objects::nonNull)
                     .build()
