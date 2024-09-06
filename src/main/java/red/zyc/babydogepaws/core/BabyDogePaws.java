@@ -100,7 +100,7 @@ public class BabyDogePaws {
 
             // 点击play按钮
             Poller.<WebDriver, WebElement>builder()
-                    .timing(Duration.ofSeconds(3), Duration.ofMillis(500))
+                    .timing(Duration.ofSeconds(20), Duration.ofMillis(500))
                     .<CallableFunction<WebDriver, WebElement>>execute(webDriver, o -> ExpectedConditions.elementToBeClickable(BABY_DAGE_PAWS_PLAY_BUTTON).apply(webDriver))
                     .predicate(Objects::nonNull)
                     .onTimeout(throwingRunnable(() -> new BabyDogePawsException("找不到play按钮")))
@@ -119,7 +119,7 @@ public class BabyDogePaws {
 
             // 1、定位游戏iframe，定位成功后webdriver就会切换到这个iframe中
             Poller.<WebDriver, WebDriver>builder()
-                    .timing(Duration.ofSeconds(6), Duration.ofMillis(500))
+                    .timing(Duration.ofSeconds(20), Duration.ofMillis(500))
                     .<CallableFunction<WebDriver, WebDriver>>execute(webDriver, o -> ExpectedConditions.frameToBeAvailableAndSwitchToIt(BABY_DAGE_PAWS_WEB_APP).apply(webDriver))
                     .predicate(Objects::nonNull)
                     .ignoreExceptions(NoSuchElementException.class)
@@ -131,7 +131,7 @@ public class BabyDogePaws {
             String key1 = "telegram-apps/launch-params";
             String key2 = "telegram-apps/mini-app";
             var items = Poller.<JavascriptExecutor, List<String>>builder()
-                    .timing(Duration.ofSeconds(10), Duration.ofMillis(500))
+                    .timing(Duration.ofSeconds(20), Duration.ofMillis(500))
                     .<CallableFunction<JavascriptExecutor, List<String>>>execute(jsExecutor, o -> executeScript(jsExecutor, RETURN_TELEGRAM_APPS_SESSION_STORAGE_ITEMS, key1, key2))
                     .predicate(o -> o != null && o.size() == 2 && o.getFirst() != null && o.get(1) != null)
                     .build()
@@ -144,7 +144,7 @@ public class BabyDogePaws {
             // 3、重新加载iframe使其能够在web端显示（reload后webdriver依旧在iframe中）
             jsExecutor.executeScript(RELOAD_PAGE);
             Poller.<JavascriptExecutor, WebElement>builder()
-                    .timing(Duration.ofSeconds(6), Duration.ofMillis(500))
+                    .timing(Duration.ofSeconds(20), Duration.ofMillis(500))
                     .<CallableFunction<JavascriptExecutor, WebElement>>execute(jsExecutor, o -> executeScript(o, RETURN_BABY_DAGE_PAWS_WEB_APP_TAB))
                     .predicate(Objects::nonNull)
                     .onTimeout(throwingRunnable(() -> new BabyDogePawsException("模拟手机登录失败")))
