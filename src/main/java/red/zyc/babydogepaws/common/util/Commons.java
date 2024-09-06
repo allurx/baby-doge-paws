@@ -35,4 +35,17 @@ public final class Commons {
     public static boolean isEmpty(String str) {
         return str == null || str.isEmpty();
     }
+
+    /**
+     * {@link Object#getClass()}返回是通配符类型的{@link Class}，
+     * 可以通过这个方法获取指定类型对象的{@link Class}。
+     *
+     * @param value 对象值
+     * @param <T>   对象类型
+     * @return 指定类型对象的 {@link Class}
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Class<T> getClass(T value) {
+        return (Class<T>) value.getClass();
+    }
 }
