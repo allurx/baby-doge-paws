@@ -228,7 +228,7 @@ public class BabyDogePawsTask {
                 upgradeCard.balance.compareTo(upgradeInfo.cost) >= 0
 
                         // 卡片升级的价格满足一定条件
-                        && upgradeInfo.cost.divide(upgradeInfo.profit, 2, RoundingMode.HALF_UP).compareTo(BigDecimal.valueOf(1751.40)) <= 0;
+                        && upgradeInfo.cost.divide(upgradeInfo.profit, 2, RoundingMode.HALF_UP).compareTo(BigDecimal.valueOf(2563.91)) < 0;
 
 
         // 卡片升级所需的花费不超过设置的阈值
