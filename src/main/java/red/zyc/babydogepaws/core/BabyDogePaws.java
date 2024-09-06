@@ -81,7 +81,7 @@ public class BabyDogePaws {
     public void playBabyDogePaws(BabyDogePawsUser user, int failNum) {
         try (var chrome = Chrome.builder()
                 .mode(Mode.ATTACH)
-                .addArgs("--user-data-dir=" + user.chromeDataDir(), "--headless=new")
+                .addArgs("--user-data-dir=%s".formatted(user.chromeDataDir()), "--headless=new")
                 .build()) {
 
             var webDriver = chrome.webDriver();
@@ -145,8 +145,6 @@ public class BabyDogePaws {
                     .onTimeout(throwingRunnable(() -> new BabyDogePawsException("模拟手机登录失败")))
                     .build()
                     .poll();
-
-            LockSupport.park();
 
             // 其它线程执行任务时就能感知到最新的authParam了
             user.authParam = (String) Json.JACKSON_OPERATOR.fromJsonString(items.get(1), Constants.OBJECT_DATA_TYPE).get("initDataRaw");
