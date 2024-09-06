@@ -15,7 +15,37 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Predicate;
 
 /**
- * 轮询器
+ * 在一段时间内以固定的时间间隔执行{@link PollerFunction}，直到超时或者函数的输出满足特定的条件，下面展示了两种常见的使用场景
+ *
+ * <pre>
+ * <h6 color="yellow">在10秒内，每隔500毫秒打印当前时间，直到超时然后抛出RuntimeException</h6>
+ * {@code
+ *     Poller.<Void, Void>builder()
+ *              .timing(Duration.ofSeconds(10), Duration.ofMillis(500))
+ *              .<RunnableFunction<Void>>execute(null, o -> System.out.println(LocalDateTime.now()))
+ *              .predicate(o -> false)
+ *              .onTimeout(throwingRunnable(() -> new RuntimeException("RuntimeException")))
+ *              .build()
+ *              .poll();
+ * }
+ * </pre>
+ *
+ * <pre>
+ * <h6 color="yellow">在10秒内，每隔500毫秒打印num++，直到num == 12则退出轮询</h6>
+ * {@code
+ *         AtomicInteger num = new AtomicInteger(1);
+ *         Poller.<AtomicInteger, Integer>builder()
+ *                 .timing(Duration.ofSeconds(10), Duration.ofMillis(500))
+ *                 .<CallableFunction<AtomicInteger, Integer>>execute(num, i -> {
+ *                     System.out.println(num.get());
+ *                     return num.getAndIncrement();
+ *                 })
+ *                 .predicate(o -> o == 12)
+ *                 .onTimeout(throwingRunnable(() -> new RuntimeException("RuntimeException")))
+ *                 .build()
+ *                 .poll();
+ * }
+ * </pre>
  *
  * @param <A> 轮询器执行函数的输入类型
  * @param <B> 轮询器执行函数的返回类型
@@ -54,7 +84,7 @@ public class Poller<A, B> {
     private A input;
 
     /**
-     * {@link #function}满足该条件则结束轮询
+     * {@link #function}的输出满足该条件则退出轮询
      */
     private Predicate<B> predicate;
 
@@ -74,29 +104,19 @@ public class Poller<A, B> {
     private final List<Class<? extends Throwable>> ignoredExceptions = new ArrayList<>();
 
     /**
-     * 轮询是否超时
-     */
-    private boolean timeout = false;
-
-    /**
-     * 函数是否执行成功
-     */
-    private boolean success = false;
-
-    /**
      * 在{@link Clock#instant()}+{@link #duration}时间段内，以固定的{@link #interval}执行{@link #function}，
      * 直到发生以下任何一种情况才会退出轮询
      * <ul>
      *     <li>{@link #function}执行结果满足{@link #predicate}
      *     <ul>
-     *         <li>{@link #success} == true</li>
-     *         <li>{@link #timeout} == false</li>
+     *         <li>{@link PollResult#success} == true</li>
+     *         <li>{@link PollResult#timeout} == false</li>
      *     </ul>
      *     </li>
      *     <li>（超时）总时长超过{@link Clock#instant()}+{@link #duration}
      *     <ul>
-     *         <li>{@link #timeout} == true</li>
-     *         <li>{@link #success} == false</li>
+     *         <li>{@link PollResult#timeout} == true</li>
+     *         <li>{@link PollResult#success} == false</li>
      *     </ul>
      *     </li>
      * </ul>
@@ -108,22 +128,50 @@ public class Poller<A, B> {
     }
 
     /**
+     * 轮询结果
+     */
+    private class PollResult {
+
+        /**
+         * 轮询的次数
+         */
+        private int num = 0;
+
+        /**
+         * 函数的输出
+         */
+        private B output = null;
+
+        /**
+         * 轮询是否超时
+         */
+        private boolean timeout = false;
+
+        /**
+         * 函数是否执行成功
+         */
+        private boolean success = false;
+    }
+
+    /**
      * 轮询逻辑
      */
     private Optional<B> polling() {
-        B result;
+        PollResult result = new PollResult();
         Instant endInstant = clock.instant().plus(duration);
         for (; ; ) {
 
             // 执行function
-            success = predicate.test(result = execute());
-            if (success) break;
+            execute(result);
+
+            // 函数执行成功则退出轮询
+            if (result.success) break;
 
             // 以下两种情况就没有必要sleep了
             // 1.function执行完成后剩余的时间不足interval
             // 2.function执行完成后的时刻已经超过endInstant
-            timeout = clock.instant().plus(interval).isAfter(endInstant);
-            if (timeout) {
+            result.timeout = clock.instant().plus(interval).isAfter(endInstant);
+            if (result.timeout) {
                 timeoutAction.run();
                 break;
             }
@@ -131,21 +179,20 @@ public class Poller<A, B> {
             // sleep
             sleeper.sleep(interval);
         }
-        return Optional.ofNullable(result);
+        return Optional.ofNullable(result.output);
     }
 
     /**
      * 如果{@link #function}执行期间发生异常，并且这个异常不在{@link #ignoredExceptions}中，则抛出它
-     *
-     * @return {@link #function}执行结果
      */
-    private B execute() {
+    private void execute(PollResult result) {
         try {
-            return function.execute(input);
+            result.num++;
+            result.output = function.execute(input);
+            result.success = predicate.test(result.output);
         } catch (Throwable t) {
             if (ignoredExceptions.stream().noneMatch(ignoredException -> ignoredException.isInstance(t))) throw t;
             LOGGER.warn("Poller is ignoring the exception: {}", t.getClass().getName());
-            return null;
         }
     }
 

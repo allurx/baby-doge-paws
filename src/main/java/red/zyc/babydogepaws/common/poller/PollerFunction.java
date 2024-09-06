@@ -6,6 +6,8 @@ package red.zyc.babydogepaws.common.poller;
  * @param <A> 函数输入类型
  * @param <B> 函数输出类型
  * @author allurx
+ * @see RunnableFunction
+ * @see CallableFunction
  */
 public sealed interface PollerFunction<A, B> permits RunnableFunction, CallableFunction {
 
