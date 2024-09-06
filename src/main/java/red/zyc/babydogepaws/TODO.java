@@ -1,5 +1,7 @@
 package red.zyc.babydogepaws;
 
+import org.openqa.selenium.By;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import red.zyc.babydogepaws.common.NamedThreadFactory;
@@ -44,6 +46,9 @@ public class TODO {
      *     </li>
      *     <li>
      *         优化挖矿间隔和次数计算逻辑
+     *     </li>
+     *     <li>
+     *         {@link ExpectedConditions#elementToBeClickable(By)}方法无法保证元素一定能够点击，需要尝试多种点击方式
      *     </li>
      * </ol>
      */
