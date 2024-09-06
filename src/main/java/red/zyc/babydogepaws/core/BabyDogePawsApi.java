@@ -244,7 +244,7 @@ public class BabyDogePawsApi {
                         LOGGER.warn("[挖矿失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? mine(param) : new HashMap<>();
                     } else {
-                        LOGGER.info("[挖矿成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, false));
+                        LOGGER.info("[挖矿成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("mine响应结果为空"));
                     }

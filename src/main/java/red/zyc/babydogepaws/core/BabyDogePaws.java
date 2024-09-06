@@ -19,7 +19,6 @@ import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsException;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
-import red.zyc.babydogepaws.selenium.SeleniumSupport;
 import red.zyc.selenium.browser.Chrome;
 import red.zyc.selenium.browser.Mode;
 import red.zyc.toolkit.json.Json;
@@ -131,8 +130,14 @@ public class BabyDogePaws {
             // 2、修改sessionStorage模拟手机登录
             String key1 = "telegram-apps/launch-params";
             String key2 = "telegram-apps/mini-app";
-            var items = SeleniumSupport.<List<String>>executeScript(jsExecutor, RETURN_TELEGRAM_APPS_SESSION_STORAGE_ITEMS, key1, key2);
-            assert items != null && items.size() == 2 && items.getFirst() != null && items.get(1) != null;
+            var items = Poller.<JavascriptExecutor, List<String>>builder()
+                    .timing(Duration.ofSeconds(10), Duration.ofMillis(500))
+                    .<CallableFunction<JavascriptExecutor, List<String>>>execute(jsExecutor, o -> executeScript(jsExecutor, RETURN_TELEGRAM_APPS_SESSION_STORAGE_ITEMS, key1, key2))
+                    .predicate(o -> o != null && o.size() == 2 && o.getFirst() != null && o.get(1) != null)
+                    .build()
+                    .poll()
+                    .orElseThrow(() -> new BabyDogePawsException("获取sessionStorage失败"));
+
             String mockPhoneLaunchParams = items.getFirst().replaceFirst("tgWebAppPlatform=weba", "tgWebAppPlatform=ios");
             jsExecutor.executeScript(SET_TELEGRAM_APPS_SESSION_STORAGE_ITEM, key1, mockPhoneLaunchParams);
 
