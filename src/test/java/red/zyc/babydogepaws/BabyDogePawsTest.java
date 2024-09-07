@@ -13,7 +13,6 @@ import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.common.util.Https;
 import red.zyc.babydogepaws.exception.BabyDogePawsApiException;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
-import red.zyc.toolkit.json.Json;
 
 import java.io.IOException;
 import java.net.URI;
@@ -27,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
-import static red.zyc.toolkit.json.Json.JACKSON_OPERATOR;
+import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
 /**
  * @author allurx
@@ -50,7 +49,7 @@ public class BabyDogePawsTest {
                 RequestEntity.get("/getUser?phoneNumber={?}", "19962006575").build(), new ParameterizedTypeReference<BabyDogePawsUser>() {
                 }).getBody();
         assert body != null;
-        LOGGER.info(Json.JACKSON_OPERATOR.toJsonString(body));
+        LOGGER.info(JACKSON_OPERATOR.toJsonString(body));
     }
 
     @Test
@@ -59,7 +58,7 @@ public class BabyDogePawsTest {
                 RequestEntity.get("/listFriends?phoneNumber={?}", "19962006575").build(), new ParameterizedTypeReference<Map<String, Object>>() {
                 }).getBody();
         assert body != null;
-        LOGGER.info(Json.JACKSON_OPERATOR.toJsonString(body));
+        LOGGER.info(JACKSON_OPERATOR.toJsonString(body));
     }
 
     @Test
@@ -68,7 +67,7 @@ public class BabyDogePawsTest {
                 RequestEntity.get("/listCardUpgradeInfo?phoneNumber={?}", "19962006575").build(), new ParameterizedTypeReference<List<Map<String, String>>>() {
                 }).getBody();
         assert body != null;
-        LOGGER.info(Json.JACKSON_OPERATOR.toJsonString(body));
+        LOGGER.info(JACKSON_OPERATOR.toJsonString(body));
     }
 
     @Test
