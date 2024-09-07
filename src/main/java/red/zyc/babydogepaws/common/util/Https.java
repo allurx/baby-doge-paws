@@ -3,14 +3,14 @@ package red.zyc.babydogepaws.common.util;
 import jakarta.servlet.ServletResponse;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.model.response.base.Response;
-import red.zyc.toolkit.core.reflect.TypeToken;
+import red.zyc.kit.core.reflection.TypeToken;
 
 import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import static red.zyc.toolkit.json.Json.JACKSON_OPERATOR;
+import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
 /**
  * @author allurx

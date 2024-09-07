@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="60 seconds" debug="false">
 
-    <contextName>BabyDogePaws</contextName>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <property name="contextName" value="baby-doge-paws"/>
     <property name="logPath" value="/baby-doge-paws-log/"/>
     <property name="consoleLogPattern" value="%blue([%contextName]) --- ${CONSOLE_LOG_PATTERN}"/>
     <property name="fileLogPattern" value="[%contextName] --- ${FILE_LOG_PATTERN}"/>
     <property name="maxHistory" value="90"/>
     <property name="maxFileSize" value="5MB"/>
+
+    <contextName>${contextName}</contextName>
 
     <!-- 控制台 -->
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
@@ -25,7 +27,7 @@
             <pattern>${fileLogPattern}</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${logPath}%d{yyyy-MM-dd}/trace/baby-doge-paws-trace.%i.log</fileNamePattern>
+            <fileNamePattern>${logPath}%d{yyyy-MM-dd}/trace/${contextName}-trace.%i.log</fileNamePattern>
             <maxHistory>${maxHistory}</maxHistory>
             <maxFileSize>${maxFileSize}</maxFileSize>
         </rollingPolicy>
@@ -43,7 +45,7 @@
             <pattern>${fileLogPattern}</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${logPath}%d{yyyy-MM-dd}/debug/baby-doge-paws-debug.%i.log</fileNamePattern>
+            <fileNamePattern>${logPath}%d{yyyy-MM-dd}/debug/${contextName}-debug.%i.log</fileNamePattern>
             <maxHistory>${maxHistory}</maxHistory>
             <maxFileSize>${maxFileSize}</maxFileSize>
         </rollingPolicy>
@@ -61,7 +63,7 @@
             <pattern>${fileLogPattern}</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${logPath}%d{yyyy-MM-dd}/info/baby-doge-paws-info.%i.log</fileNamePattern>
+            <fileNamePattern>${logPath}%d{yyyy-MM-dd}/info/${contextName}-info.%i.log</fileNamePattern>
             <maxHistory>${maxHistory}</maxHistory>
             <maxFileSize>${maxFileSize}</maxFileSize>
         </rollingPolicy>
@@ -79,7 +81,7 @@
             <pattern>${fileLogPattern}</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${logPath}%d{yyyy-MM-dd}/warn/baby-doge-paws-warn.%i.log</fileNamePattern>
+            <fileNamePattern>${logPath}%d{yyyy-MM-dd}/warn/${contextName}-warn.%i.log</fileNamePattern>
             <maxHistory>${maxHistory}</maxHistory>
             <maxFileSize>${maxFileSize}</maxFileSize>
         </rollingPolicy>
@@ -97,7 +99,7 @@
             <pattern>${fileLogPattern}</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${logPath}%d{yyyy-MM-dd}/error/baby-doge-paws-error.%i.log</fileNamePattern>
+            <fileNamePattern>${logPath}%d{yyyy-MM-dd}/error/${contextName}-error.%i.log</fileNamePattern>
             <maxHistory>${maxHistory}</maxHistory>
             <maxFileSize>${maxFileSize}</maxFileSize>
         </rollingPolicy>

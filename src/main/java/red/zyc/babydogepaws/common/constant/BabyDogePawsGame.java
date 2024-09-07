@@ -10,7 +10,7 @@ import java.net.http.HttpRequest;
 import java.util.Map;
 import java.util.Optional;
 
-import static red.zyc.toolkit.json.Json.JACKSON_OPERATOR;
+import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
 /**
  * @author allurx

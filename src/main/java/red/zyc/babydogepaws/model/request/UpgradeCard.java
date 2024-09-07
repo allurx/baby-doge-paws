@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.function.Function;
 
-import static red.zyc.toolkit.json.Json.JACKSON_OPERATOR;
+import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
 /**
  * @author allurx

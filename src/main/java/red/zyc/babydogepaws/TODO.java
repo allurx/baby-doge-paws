@@ -18,7 +18,8 @@ import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
-import static red.zyc.toolkit.json.Json.JACKSON_OPERATOR;
+import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
+
 
 /**
  * @author allurx

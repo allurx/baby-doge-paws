@@ -13,7 +13,6 @@ import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.model.response.BabyDogePawsUserVo;
 import red.zyc.babydogepaws.model.response.base.Response;
 import red.zyc.babydogepaws.model.response.base.ResponseMessage;
-import red.zyc.toolkit.json.Json;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -26,6 +25,7 @@ import java.util.Optional;
 
 import static red.zyc.babydogepaws.common.constant.Constants.VOID;
 import static red.zyc.babydogepaws.model.response.base.Response.ok;
+import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
 /**
  * @author allurx
@@ -50,7 +50,7 @@ public class BabyDogePawsController {
     public Response<BabyDogePawsUserVo> getUser(//@Parameter(ref = PARAMETER_COMPONENT_USER_PHONE_NUMBER)
                                                 @RequestParam String phoneNumber) {
         return ok(Optional.ofNullable(userMapper.getBabyDogeUser(phoneNumber))
-                .map(user -> Json.JACKSON_OPERATOR.copyProperties(userMapper.getBabyDogeUser(phoneNumber), BabyDogePawsUserVo.class))
+                .map(user -> JACKSON_OPERATOR.copyProperties(userMapper.getBabyDogeUser(phoneNumber), BabyDogePawsUserVo.class))
                 .orElse(null));
     }
 

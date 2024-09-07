@@ -2,7 +2,7 @@ package red.zyc.babydogepaws.common.poller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import red.zyc.toolkit.core.function.ThrowableSupplier;
+import red.zyc.kit.core.function.ThrowableSupplier;
 
 import java.time.Clock;
 import java.time.Duration;

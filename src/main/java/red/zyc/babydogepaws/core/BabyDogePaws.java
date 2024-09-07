@@ -21,7 +21,6 @@ import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.selenium.browser.Chrome;
 import red.zyc.selenium.browser.Mode;
-import red.zyc.toolkit.json.Json;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -35,6 +34,7 @@ import static red.zyc.babydogepaws.selenium.ElementPosition.BABY_DAGE_PAWS_PLAY_
 import static red.zyc.babydogepaws.selenium.ElementPosition.BABY_DAGE_PAWS_WEB_APP;
 import static red.zyc.babydogepaws.selenium.Javascript.*;
 import static red.zyc.babydogepaws.selenium.SeleniumSupport.executeScript;
+import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
 /**
  * @author allurx
@@ -152,7 +152,7 @@ public class BabyDogePaws {
                     .poll();
 
             // 其它线程执行任务时就能感知到最新的authParam了
-            user.authParam = (String) Json.JACKSON_OPERATOR.fromJsonString(items.get(1), Constants.OBJECT_DATA_TYPE).get("initDataRaw");
+            user.authParam = (String) JACKSON_OPERATOR.fromJsonString(items.get(1), Constants.OBJECT_DATA_TYPE).get("initDataRaw");
 
             // 保存或更新登录信息
             loginInfoMapper.saveOrUpdateLoginInfo(user.id, LocalDateTime.now(), user.authParam);

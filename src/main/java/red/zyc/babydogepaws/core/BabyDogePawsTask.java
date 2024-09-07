@@ -29,7 +29,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static red.zyc.toolkit.json.Json.JACKSON_OPERATOR;
+import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
+
 
 /**
  * @author allurx
