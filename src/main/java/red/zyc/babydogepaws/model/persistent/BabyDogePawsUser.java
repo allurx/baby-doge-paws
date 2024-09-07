@@ -12,8 +12,8 @@ import java.util.concurrent.ScheduledFuture;
  */
 public class BabyDogePawsUser {
 
-    public static final int MINE_INTERVAL = 3000 / 4;
-    public static final int MINE_COUNT = 300;
+    public static final int MINE_INTERVAL = 2400 / 4;
+    public static final int MINE_COUNT = 200;
 
     public Integer id;
     public String country;

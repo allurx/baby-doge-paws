@@ -1,4 +1,4 @@
-package red.zyc.babydogepaws.core;
+package red.zyc.babydogepaws.game;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

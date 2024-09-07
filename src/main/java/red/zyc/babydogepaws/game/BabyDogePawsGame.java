@@ -1,4 +1,4 @@
-package red.zyc.babydogepaws.common.constant;
+package red.zyc.babydogepaws.game;
 
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;

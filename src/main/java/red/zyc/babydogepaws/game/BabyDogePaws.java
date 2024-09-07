@@ -1,4 +1,4 @@
-package red.zyc.babydogepaws.core;
+package red.zyc.babydogepaws.game;
 
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
@@ -10,8 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.common.constant.Constants;
-import red.zyc.babydogepaws.common.poller.CallableFunction;
-import red.zyc.babydogepaws.common.poller.Poller;
 import red.zyc.babydogepaws.common.util.Commons;
 import red.zyc.babydogepaws.common.util.Mails;
 import red.zyc.babydogepaws.dao.LoginInfoMapper;
@@ -19,6 +17,8 @@ import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsException;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
+import red.zyc.kit.core.poller.CallableFunction;
+import red.zyc.kit.core.poller.Poller;
 import red.zyc.selenium.browser.Chrome;
 import red.zyc.selenium.browser.Mode;
 
@@ -29,11 +29,11 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-import static red.zyc.babydogepaws.common.poller.Poller.throwingRunnable;
 import static red.zyc.babydogepaws.selenium.ElementPosition.BABY_DAGE_PAWS_PLAY_BUTTON;
 import static red.zyc.babydogepaws.selenium.ElementPosition.BABY_DAGE_PAWS_WEB_APP;
 import static red.zyc.babydogepaws.selenium.Javascript.*;
 import static red.zyc.babydogepaws.selenium.SeleniumSupport.executeScript;
+import static red.zyc.kit.core.poller.Poller.throwingRunnable;
 import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
 /**

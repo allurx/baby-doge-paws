@@ -1,4 +1,4 @@
-package red.zyc.babydogepaws.core;
+package red.zyc.babydogepaws.game;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static red.zyc.babydogepaws.common.constant.BabyDogePawsGame.Request.*;
+import static red.zyc.babydogepaws.game.BabyDogePawsGame.Request.*;
 
 /**
  * BabyDogePaws游戏http接口

@@ -3,7 +3,7 @@ package red.zyc.babydogepaws;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import red.zyc.babydogepaws.core.BabyDogePaws;
+import red.zyc.babydogepaws.game.BabyDogePaws;
 
 /**
  * @author allurx

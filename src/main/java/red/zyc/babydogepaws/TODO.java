@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import red.zyc.babydogepaws.common.NamedThreadFactory;
 import red.zyc.babydogepaws.common.constant.Constants;
-import red.zyc.babydogepaws.core.BabyDogePawsApi;
+import red.zyc.babydogepaws.game.BabyDogePawsApi;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
