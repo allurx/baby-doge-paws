@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.game.BabyDogePawsApi;
 import red.zyc.babydogepaws.game.BabyDogePawsTask;
-import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.model.response.BabyDogePawsUserVo;
 import red.zyc.babydogepaws.model.response.base.Response;
@@ -50,7 +50,7 @@ public class BabyDogePawsController {
     public Response<BabyDogePawsUserVo> getUser(//@Parameter(ref = PARAMETER_COMPONENT_USER_PHONE_NUMBER)
                                                 @RequestParam String phoneNumber) {
         return ok(Optional.ofNullable(userMapper.getBabyDogeUser(phoneNumber))
-                .map(user -> JACKSON_OPERATOR.copyProperties(userMapper.getBabyDogeUser(phoneNumber), BabyDogePawsUserVo.class))
+                .map(user -> JACKSON_OPERATOR.<BabyDogePawsUserVo>copyProperties(userMapper.getBabyDogeUser(phoneNumber), BabyDogePawsUserVo.class))
                 .orElse(null));
     }
 
