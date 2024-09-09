@@ -17,8 +17,8 @@ import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsException;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
-import red.zyc.kit.core.poller.CallableFunction;
-import red.zyc.kit.core.poller.Poller;
+import red.zyc.kit.base.poller.CallableFunction;
+import red.zyc.kit.base.poller.Poller;
 import red.zyc.selenium.browser.Chrome;
 import red.zyc.selenium.browser.Mode;
 
@@ -33,7 +33,7 @@ import static red.zyc.babydogepaws.selenium.ElementPosition.BABY_DAGE_PAWS_PLAY_
 import static red.zyc.babydogepaws.selenium.ElementPosition.BABY_DAGE_PAWS_WEB_APP;
 import static red.zyc.babydogepaws.selenium.Javascript.*;
 import static red.zyc.babydogepaws.selenium.SeleniumSupport.executeScript;
-import static red.zyc.kit.core.poller.Poller.throwingRunnable;
+import static red.zyc.kit.base.poller.Poller.throwingRunnable;
 import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
 /**

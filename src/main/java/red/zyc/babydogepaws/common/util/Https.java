@@ -3,7 +3,7 @@ package red.zyc.babydogepaws.common.util;
 import jakarta.servlet.ServletResponse;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.model.response.base.Response;
-import red.zyc.kit.core.reflection.TypeToken;
+import red.zyc.kit.base.reflection.TypeToken;
 
 import java.io.IOException;
 import java.net.http.HttpResponse;

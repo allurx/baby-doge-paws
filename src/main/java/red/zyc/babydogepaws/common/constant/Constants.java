@@ -1,6 +1,6 @@
 package red.zyc.babydogepaws.common.constant;
 
-import red.zyc.kit.core.reflection.TypeToken;
+import red.zyc.kit.base.reflection.TypeToken;
 
 import java.util.List;
 import java.util.Map;

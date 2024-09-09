@@ -45,6 +45,13 @@ public class BabyDogePawsController {
     }
 
 
+    @Operation(summary = "修改卡牌升级限制")
+    @PostMapping("/updateLimit")
+    public Response<Void> updateLimit(@RequestParam BigDecimal limit) {
+        BabyDogePawsTask.limit = limit.doubleValue();
+        return ok();
+    }
+
     @Operation(summary = "获取用户信息")
     @GetMapping("/getUser")
     public Response<BabyDogePawsUserVo> getUser(//@Parameter(ref = PARAMETER_COMPONENT_USER_PHONE_NUMBER)
@@ -53,6 +60,7 @@ public class BabyDogePawsController {
                 .map(user -> JACKSON_OPERATOR.<BabyDogePawsUserVo>copyProperties(userMapper.getBabyDogeUser(phoneNumber), BabyDogePawsUserVo.class))
                 .orElse(null));
     }
+
 
     @Operation(summary = "获取用户好友信息")
     @GetMapping("/listFriends")
