@@ -3,7 +3,6 @@ package red.zyc.babydogepaws.game;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import red.zyc.babydogepaws.common.NamedThreadFactory;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.common.util.ApplicationContextHolder;
 import red.zyc.babydogepaws.common.util.Https;
@@ -38,7 +37,7 @@ public class BabyDogePawsApi {
     private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePawsApi.class);
     private static final HttpClient CLIENT = HttpClient.newBuilder().
             connectTimeout(Duration.ofSeconds(30L))
-            .executor(Executors.newThreadPerTaskExecutor(new NamedThreadFactory("BabyDogePawsApiRequester", true)))
+            .executor(Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("BabyDogePawsApiRequester-", 0).factory()))
             .build();
     private static final ConcurrentHashMap<Integer, ReentrantLock> USER_LOCKS = new ConcurrentHashMap<>();
     private final UserMapper userMapper;

@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import red.zyc.babydogepaws.common.NamedThreadFactory;
 import red.zyc.babydogepaws.dao.CardMapper;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.persistent.Card;
@@ -43,10 +42,10 @@ public class BabyDogePawsTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePawsTask.class);
     private static final HttpClient CLIENT = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10L)).build();
 
-    private static final ScheduledThreadPoolExecutor AUTHENTICATOR = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("Authenticator", true));
-    private static final ScheduledThreadPoolExecutor MINER = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("Miner", true));
-    private static final ScheduledThreadPoolExecutor CARD_UP_GRADER = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("CardUpGrader", true));
-    private static final ScheduledThreadPoolExecutor ONE_TIME_TASK_HITTER = new ScheduledThreadPoolExecutor(0, new NamedThreadFactory("OneTimeMissionHitter", true));
+    private static final ScheduledThreadPoolExecutor AUTHENTICATOR = new ScheduledThreadPoolExecutor(0, Thread.ofVirtual().name("Authenticator-", 0).factory());
+    private static final ScheduledThreadPoolExecutor MINER = new ScheduledThreadPoolExecutor(0, Thread.ofVirtual().name("Miner-", 0).factory());
+    private static final ScheduledThreadPoolExecutor CARD_UP_GRADER = new ScheduledThreadPoolExecutor(0, Thread.ofVirtual().name("CardUpGrader-", 0).factory());
+    private static final ScheduledThreadPoolExecutor ONE_TIME_TASK_HITTER = new ScheduledThreadPoolExecutor(0, Thread.ofVirtual().name("OneTimeMissionHitter-", 0).factory());
     private final BabyDogePawsApi babyDogePawsApi;
     private final CardMapper cardMapper;
 

@@ -6,7 +6,6 @@ import org.apache.commons.mail.MultiPartEmail;
 import org.apache.commons.mail.SimpleEmail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import red.zyc.babydogepaws.common.NamedThreadFactory;
 import red.zyc.babydogepaws.exception.MailSendException;
 
 import javax.mail.util.ByteArrayDataSource;
@@ -25,7 +24,7 @@ import java.util.zip.ZipOutputStream;
 public final class Mails {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Mails.class);
-    private static final ExecutorService SEND_MAIL_EXECUTOR = Executors.newFixedThreadPool(1, new NamedThreadFactory("Mailer", false));
+    private static final ExecutorService SEND_MAIL_EXECUTOR = Executors.newFixedThreadPool(1, Thread.ofVirtual().name("Mailer-", 0).factory());
     private static final MailServerConfiguration GMAIL_SERVER = new MailServerConfiguration("smtp.gmail.com", 465, "allurx.zyc@gmail.com", "allurx.zyc@gmail.com", "allurx.zyc@gmail.com", "mjegfzjggsxacxrq");
     private static final MailServerConfiguration QQ_SERVER = new MailServerConfiguration("smtp.qq.com", 465, "allurx@qq.com", "allurx@qq.com", "allurx@qq.com", "niqdqxyghqiyhbcg");
 

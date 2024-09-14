@@ -4,7 +4,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import red.zyc.babydogepaws.common.NamedThreadFactory;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.game.BabyDogePawsApi;
 
@@ -15,8 +14,6 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
@@ -27,7 +24,6 @@ import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 public class TODO {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TODO.class);
-    private static final ScheduledExecutorService EXECUTOR_SERVICE = new ScheduledThreadPoolExecutor(Integer.MAX_VALUE, new NamedThreadFactory("TODO", false));
     public final TODO TODO = this;
 
 

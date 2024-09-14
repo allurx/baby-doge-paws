@@ -8,7 +8,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.RequestEntity;
-import red.zyc.babydogepaws.common.NamedThreadFactory;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.common.util.Https;
 import red.zyc.babydogepaws.exception.BabyDogePawsApiException;
@@ -37,7 +36,7 @@ public class BabyDogePawsTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePawsTest.class);
     private static final HttpClient CLIENT = HttpClient.newBuilder().
             connectTimeout(Duration.ofSeconds(30L))
-            .executor(Executors.newThreadPerTaskExecutor(new NamedThreadFactory("BabyDogePawsApiRequester", true)))
+            .executor(Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("BabyDogePawsApiRequester-", 0).factory()))
             .build();
 
     @Autowired
@@ -140,7 +139,7 @@ public class BabyDogePawsTest {
         LOGGER.info("mine: {}", JACKSON_OPERATOR.toJsonString(data));
     }
 
-    static void upgradeCard(String xApiKey,int cardId) {
+    static void upgradeCard(String xApiKey, int cardId) {
         var data = CLIENT.sendAsync(HttpRequest.newBuilder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/cards"))
                         .header("content-type", "application/json")
@@ -168,11 +167,11 @@ public class BabyDogePawsTest {
     }
 
     public static void main(String[] args) throws Exception {
-        String key="d0275d3ab943ee7f9ef1bd0957973b75357acc621cea2057ec59be1cdb777886";
+        String key = "d0275d3ab943ee7f9ef1bd0957973b75357acc621cea2057ec59be1cdb777886";
         getMe(key);
         mine(key);
         pickDailyBonus(key);
-        upgradeCard(key,17);
+        upgradeCard(key, 17);
         getMe(key);
 
     }
