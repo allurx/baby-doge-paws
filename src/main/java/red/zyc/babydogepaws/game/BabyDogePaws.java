@@ -19,8 +19,8 @@ import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.kit.base.concurrency.CallableFunction;
 import red.zyc.kit.base.concurrency.Poller;
-import red.zyc.kit.selenium.browser.Chrome;
-import red.zyc.kit.selenium.browser.Mode;
+import red.zyc.kit.selenium.Chrome;
+import red.zyc.kit.selenium.Mode;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
