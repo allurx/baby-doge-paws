@@ -17,6 +17,7 @@ import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsException;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
+import red.zyc.babydogepaws.selenium.SeleniumSupport;
 import red.zyc.kit.base.concurrency.CallableFunction;
 import red.zyc.kit.base.concurrency.Poller;
 import red.zyc.kit.selenium.Chrome;
@@ -26,6 +27,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
@@ -93,35 +95,43 @@ public class BabyDogePaws {
             Poller.<JavascriptExecutor, Boolean>builder()
                     .timing(Duration.ofSeconds(60), Duration.ofSeconds(1))
                     .<CallableFunction<JavascriptExecutor, Boolean>>execute(jsExecutor, o -> executeScript(o, RETURN_TELEGRAM_LOGIN_SUCCESS))
-                    .predicate(r -> r)
+                    .until(r -> r)
                     .onTimeout(throwingRunnable(() -> new BabyDogePawsException("telegram页面加载失败")))
                     .build()
                     .poll();
 
             // 点击play按钮
-            Poller.<WebDriver, WebElement>builder()
-                    .timing(Duration.ofSeconds(60), Duration.ofMillis(1000))
-                    .<CallableFunction<WebDriver, WebElement>>execute(webDriver, o -> ExpectedConditions.elementToBeClickable(BABY_DAGE_PAWS_PLAY_BUTTON).apply(o))
-                    .predicate(Objects::nonNull)
+            Poller.<WebDriver, Boolean>builder()
+                    .timing(Duration.ofSeconds(30), Duration.ofMillis(500))
+                    .<CallableFunction<WebDriver, Boolean>>execute(webDriver, o -> Optional.ofNullable(ExpectedConditions.elementToBeClickable(BABY_DAGE_PAWS_PLAY_BUTTON).apply(o))
+                            .map(element -> {
+                                element.click();
+                                return true;
+                            }).orElse(false))
+                    .until(b -> b)
                     .onTimeout(throwingRunnable(() -> new BabyDogePawsException("找不到play按钮")))
+                    .ignoreExceptions(Throwable.class)
                     .build()
-                    .poll()
-                    .ifPresent(WebElement::click);
+                    .poll();
 
             // 第一次play会出现一个confirm按钮
-            Poller.<JavascriptExecutor, WebElement>builder()
+            Poller.<JavascriptExecutor, Boolean>builder()
                     .timing(Duration.ofSeconds(10), Duration.ofMillis(1000))
-                    .<CallableFunction<JavascriptExecutor, WebElement>>execute(jsExecutor, o -> executeScript(o, RETURN_BABY_DAGE_PAWS_WEB_APP_CONFIRM_BUTTON))
-                    .predicate(Objects::nonNull)
+                    .<CallableFunction<JavascriptExecutor, Boolean>>execute(jsExecutor, o -> Optional.ofNullable(SeleniumSupport.<WebElement>executeScript(o, RETURN_BABY_DAGE_PAWS_WEB_APP_CONFIRM_BUTTON))
+                            .map(element -> {
+                                element.click();
+                                return true;
+                            }).orElse(false))
+                    .until(b -> b)
+                    .ignoreExceptions(Throwable.class)
                     .build()
-                    .poll()
-                    .ifPresent(WebElement::click);
+                    .poll();
 
             // 1、定位游戏iframe，定位成功后webdriver就会切换到这个iframe中
             Poller.<WebDriver, WebDriver>builder()
                     .timing(Duration.ofSeconds(60), Duration.ofMillis(1000))
                     .<CallableFunction<WebDriver, WebDriver>>execute(webDriver, o -> ExpectedConditions.frameToBeAvailableAndSwitchToIt(BABY_DAGE_PAWS_WEB_APP).apply(o))
-                    .predicate(Objects::nonNull)
+                    .until(Objects::nonNull)
                     .ignoreExceptions(NoSuchElementException.class)
                     .onTimeout(throwingRunnable(() -> new BabyDogePawsException("定位游戏iframe失败")))
                     .build()
@@ -133,7 +143,7 @@ public class BabyDogePaws {
             var items = Poller.<JavascriptExecutor, List<String>>builder()
                     .timing(Duration.ofSeconds(30), Duration.ofMillis(1000))
                     .<CallableFunction<JavascriptExecutor, List<String>>>execute(jsExecutor, o -> executeScript(jsExecutor, RETURN_TELEGRAM_APPS_SESSION_STORAGE_ITEMS, key1, key2))
-                    .predicate(o -> o != null && o.size() == 2 && o.getFirst() != null && o.get(1) != null)
+                    .until(o -> o != null && o.size() == 2 && o.getFirst() != null && o.get(1) != null)
                     .build()
                     .poll()
                     .orElseThrow(() -> new BabyDogePawsException("获取sessionStorage失败"));
@@ -146,7 +156,7 @@ public class BabyDogePaws {
             Poller.<JavascriptExecutor, WebElement>builder()
                     .timing(Duration.ofSeconds(30), Duration.ofMillis(1000))
                     .<CallableFunction<JavascriptExecutor, WebElement>>execute(jsExecutor, o -> executeScript(o, RETURN_BABY_DAGE_PAWS_WEB_APP_TAB))
-                    .predicate(Objects::nonNull)
+                    .until(Objects::nonNull)
                     .onTimeout(throwingRunnable(() -> new BabyDogePawsException("模拟手机登录失败")))
                     .build()
                     .poll();
