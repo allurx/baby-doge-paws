@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static red.zyc.babydogepaws.game.BabyDogePawsGame.Request.*;
+import static red.zyc.babydogepaws.game.BabyDogePawsApiRequest.Request.*;
 
 /**
  * BabyDogePaws游戏http接口

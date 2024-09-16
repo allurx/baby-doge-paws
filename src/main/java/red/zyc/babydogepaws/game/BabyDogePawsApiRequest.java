@@ -15,9 +15,9 @@ import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 /**
  * @author allurx
  */
-public final class BabyDogePawsGame {
+public final class BabyDogePawsApiRequest {
 
-    private BabyDogePawsGame() {
+    private BabyDogePawsApiRequest() {
     }
 
     public enum Request {
