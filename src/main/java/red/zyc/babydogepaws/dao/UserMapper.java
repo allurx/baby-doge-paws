@@ -61,12 +61,21 @@ public interface UserMapper {
     BabyDogePawsUser getBabyDogeUser(String phoneNumber);
 
     @Insert("""
-            INSERT INTO user ( user_id, invite_link, x_api_key, friend_num )
+            INSERT INTO user ( user_id, balance,profit_per_hour,level,invite_link, x_api_key, friend_num )
             VALUES
-            	(#{userId},#{inviteLink},#{xApiKey},#{friendNum})
+            	(#{userId},#{balance},#{profitPerHour},#{level},#{inviteLink},#{xApiKey},#{friendNum})
             	ON DUPLICATE KEY UPDATE 
+                     balance=#{balance},
+                     profit_per_hour=#{profitPerHour},
+                     `level`=#{level},
                         x_api_key = #{xApiKey},
                         friend_num=#{friendNum};
                         """)
-    int saveOrUpdateUser(Integer userId, String inviteLink, String xApiKey, Integer friendNum);
+    int saveOrUpdateUser(Integer userId,
+                         long balance,
+                         int profitPerHour,
+                         int level,
+                         String inviteLink,
+                         String xApiKey,
+                         Integer friendNum);
 }

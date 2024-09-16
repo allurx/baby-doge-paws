@@ -24,7 +24,6 @@ public class BabyDogePawsUser {
 
     public volatile String xApiKey;
     public volatile String authParam;
-    public volatile Map<String, Object> data;
     public volatile Map<String, ScheduledFuture<?>> tasks = new HashMap<>();
     public volatile boolean tasksCanceled = false;
 

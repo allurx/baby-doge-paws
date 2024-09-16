@@ -104,13 +104,15 @@ public class BabyDogePawsApi {
                             return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE).map(authData -> {
 
                                 // 更新游戏数据
-                                param.user.data = authData;
                                 param.user.xApiKey = String.valueOf(authData.get("access_token"));
 
                                 // 保存或更新游戏账户的一些信息
                                 var friends = listFriends(param);
                                 userMapper.saveOrUpdateUser(
                                         param.user.id,
+                                        Long.parseLong(authData.get("balance").toString()),
+                                        (int)authData.get("profit_per_hour"),
+                                        (int)authData.get("current_league"),
                                         String.valueOf(friends.get("copy_link")),
                                         param.user.xApiKey,
                                         (Integer) friends.get("friends_count"));
