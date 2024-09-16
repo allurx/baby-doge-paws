@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import static red.zyc.babydogepaws.common.constant.Constants.VOID;
 import static red.zyc.babydogepaws.model.response.base.Response.ok;
+import static red.zyc.babydogepaws.model.response.base.ResponseMessage.ILLEGAL_MINE_COUNT;
 import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
 /**
@@ -44,12 +45,23 @@ public class BabyDogePawsController {
         this.babyDogePawsTask = babyDogePawsTask;
     }
 
-
     @Operation(summary = "修改卡牌升级限制")
     @PostMapping("/updateLimit")
     public Response<Void> updateLimit(@RequestParam BigDecimal limit) {
         BabyDogePawsTask.limit = limit.doubleValue();
         return ok();
+    }
+
+    @Operation(summary = "修改挖矿数量")
+    @PostMapping("/updateMineCount")
+    public Response<Void> updateMineCount(@RequestParam int mineCountMin, @RequestParam int mineCountMax) {
+        if (mineCountMin >= mineCountMax) {
+            return ok(ILLEGAL_MINE_COUNT);
+        } else {
+            BabyDogePawsTask.mineCountMin = mineCountMin;
+            BabyDogePawsTask.mineCountMax = mineCountMax;
+            return ok();
+        }
     }
 
     @Operation(summary = "获取用户信息")

@@ -25,6 +25,8 @@ public enum ResponseMessage {
     UN_AUTHORIZED("未授权", "F0002"),
     MISSING_USER("用户不存在", "F0003"),
 
+    ILLEGAL_MINE_COUNT("mineCountMin必须小于mineCountMax", "F0004"),
+
 
     ;
 

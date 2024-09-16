@@ -40,7 +40,9 @@ import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 @Service
 public class BabyDogePawsTask {
 
-    public static volatile double limit = 1517.26;
+    public static volatile double limit = 500;
+    public static volatile int mineCountMin = 1;
+    public static volatile int mineCountMax = 201;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePawsTask.class);
     private static final HttpClient CLIENT = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10L)).build();
@@ -121,7 +123,7 @@ public class BabyDogePawsTask {
             do {
 
                 // 挖矿请求
-                count = ThreadLocalRandom.current().nextInt(1, 9);
+                count = ThreadLocalRandom.current().nextInt(mineCountMin, mineCountMax);
                 var miningInfo = babyDogePawsApi.mine(new Mine(param.user, count));
 
                 // 挖矿请求返回的用户信息
@@ -133,11 +135,12 @@ public class BabyDogePawsTask {
 
                 // 挖矿请求返回的挖矿信息
                 @SuppressWarnings("unchecked")
-                var mineInfo = (Map<String, Object>) miningInfo.get("mine");
-                mined = (int) mineInfo.getOrDefault("mined", 0);
+                var mineValue = (Map<String, Object>) miningInfo.get("mine");
+                mined = (int) mineValue.getOrDefault("mined", 0);
 
                 // 挖矿请求返回的奖励信息
-                draw = JACKSON_OPERATOR.toJsonString(miningInfo.get("draw"));
+                var drawValue = miningInfo.get("draw");
+                draw = JACKSON_OPERATOR.toJsonString(drawValue == null ? Map.of() : drawValue);
 
                 // 能量充满所需时间（秒）
                 timeToFullyCharge = Math.ceilDiv(maxEnergy, 3);
@@ -222,7 +225,7 @@ public class BabyDogePawsTask {
 
                 // 用新号来追踪卡片升级信息
                 .peek(upgradeCard -> {
-                    if(babyDogePawsProperties.cardUpgradeInfoTracker().contains(user.phoneNumber)){
+                    if (babyDogePawsProperties.cardUpgradeInfoTracker().contains(user.phoneNumber)) {
                         cardMapper.saveOrUpdateCard(upgradeCard.card, upgradeCard.upgradeInfo);
                     }
                 })
