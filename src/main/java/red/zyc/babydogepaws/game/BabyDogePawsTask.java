@@ -41,7 +41,7 @@ import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 public class BabyDogePawsTask {
 
     public static volatile double limit = 500;
-    public static volatile int mineCountMin = 1;
+    public static volatile int mineCountMin = 50;
     public static volatile int mineCountMax = 201;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePawsTask.class);
@@ -70,10 +70,26 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     public void schedule(BabyDogePawsGameRequestParam param) {
+        scheduleAuthorize(param);
         schedulePickDailyBonus(param);
         schedulePickPromo(param);
         scheduleMine(param);
         scheduleUpgradeCard(param);
+    }
+
+    /**
+     * 每隔1小时授权一次，确保游戏处于活跃状态，以便能够持续产生利润
+     *
+     * @param param {@link BabyDogePawsGameRequestParam}
+     */
+    private void scheduleAuthorize(BabyDogePawsGameRequestParam param) {
+        param.user.tasks.put("Authorize", AUTHENTICATOR.scheduleAtFixedRate(() -> {
+            try {
+                babyDogePawsApi.authorize(param);
+            } catch (Throwable t) {
+                LOGGER.error("[执行授权task发生异常]-{}", param.user.phoneNumber, t);
+            }
+        }, 0L, 1L, TimeUnit.HOURS));
     }
 
     /**
