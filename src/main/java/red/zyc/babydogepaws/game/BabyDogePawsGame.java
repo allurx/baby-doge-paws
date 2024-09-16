@@ -1,6 +1,5 @@
 package red.zyc.babydogepaws.game;
 
-import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.model.request.PickChannel;
 import red.zyc.babydogepaws.model.request.UpgradeCard;
@@ -9,6 +8,7 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
@@ -97,7 +97,7 @@ public final class BabyDogePawsGame {
                         .uri(URI.create("https://backend.babydogepawsbot.com/mine"))
                         .header("content-type", "application/json")
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
-                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("count", BabyDogePawsUser.MINE_COUNT))))
+                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("count", ThreadLocalRandom.current().nextInt(1, 9)))))
                         .build();
             }
         },

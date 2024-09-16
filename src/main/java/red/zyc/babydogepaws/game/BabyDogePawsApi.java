@@ -96,7 +96,7 @@ public class BabyDogePawsApi {
                                 return new HashMap<>();
                             }
 
-                            // 其它错误码直接返回，等待下一个定时任务执行直到服务器恢复
+                            // 其它错误码直接返回，等待下一个定时任务执行直到游戏服务器恢复
                             return new HashMap<>();
 
                         } else {

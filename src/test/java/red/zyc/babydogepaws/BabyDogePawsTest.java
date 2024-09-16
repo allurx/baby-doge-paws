@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
@@ -130,7 +131,7 @@ public class BabyDogePawsTest {
                         .uri(URI.create("https://backend.babydogepawsbot.com/mine"))
                         .header("content-type", "application/json")
                         .header("x-api-key", xApiKey)
-                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("count", BabyDogePawsUser.MINE_COUNT))))
+                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("count", ThreadLocalRandom.current().nextInt(1, 11)))))
                         .build(), HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                         .orElseThrow(() -> new BabyDogePawsApiException("mine响应结果为空")))

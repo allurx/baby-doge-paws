@@ -57,7 +57,7 @@ public class BabyDogePawsController {
     public Response<BabyDogePawsUserVo> getUser(//@Parameter(ref = PARAMETER_COMPONENT_USER_PHONE_NUMBER)
                                                 @RequestParam String phoneNumber) {
         return ok(Optional.ofNullable(userMapper.getBabyDogeUser(phoneNumber))
-                .map(user -> JACKSON_OPERATOR.<BabyDogePawsUserVo>copyProperties(userMapper.getBabyDogeUser(phoneNumber), BabyDogePawsUserVo.class))
+                .map(user -> JACKSON_OPERATOR.<BabyDogePawsUserVo>copyProperties(user, BabyDogePawsUserVo.class))
                 .orElse(null));
     }
 

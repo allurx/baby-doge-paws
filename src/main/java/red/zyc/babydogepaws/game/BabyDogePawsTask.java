@@ -63,85 +63,81 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     public void schedule(BabyDogePawsGameRequestParam param) {
-        param.user.tasks.add(scheduleAuthorize(param));
-        param.user.tasks.add(schedulePickDailyBonus(param));
-        param.user.tasks.add(schedulePickPromo(param));
-        param.user.tasks.add(scheduleMine(param));
-        param.user.tasks.add(scheduleUpgradeCard(param));
-    }
-
-    /**
-     * 每隔1小时授权一次，确保游戏处于活跃状态，以便能够持续产生利润
-     *
-     * @param param {@link BabyDogePawsGameRequestParam}
-     * @return 任务
-     */
-    private ScheduledFuture<?> scheduleAuthorize(BabyDogePawsGameRequestParam param) {
-        return AUTHENTICATOR.scheduleAtFixedRate(() -> {
-            try {
-                babyDogePawsApi.authorize(param);
-            } catch (Throwable t) {
-                LOGGER.error("[执行授权task发生异常]-{}", param.user.phoneNumber, t);
-            }
-        }, 0L, 1L, TimeUnit.HOURS);
+        schedulePickDailyBonus(param);
+        schedulePickPromo(param);
+        scheduleMine(param);
+        scheduleUpgradeCard(param);
     }
 
     /**
      * 定时采集当天每日奖励
      *
      * @param param {@link BabyDogePawsGameRequestParam}
-     * @return 任务
      */
-    private ScheduledFuture<?> schedulePickDailyBonus(BabyDogePawsGameRequestParam param) {
-        return ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
+    private void schedulePickDailyBonus(BabyDogePawsGameRequestParam param) {
+        param.user.tasks.put("PickDailyBonus", ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
             try {
                 babyDogePawsApi.pickDailyBonus(param);
             } catch (Throwable t) {
                 LOGGER.error("[执行采集每日奖励task发生异常]-{}", param.user.phoneNumber, t);
             }
-        }, 0L, 1L, TimeUnit.HOURS);
+        }, 0L, 1L, TimeUnit.HOURS));
     }
 
     /**
      * 定时采集促销奖励
      *
      * @param param {@link BabyDogePawsGameRequestParam}
-     * @return 任务
      */
-    private ScheduledFuture<?> schedulePickPromo(BabyDogePawsGameRequestParam param) {
-        return ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
+    private void schedulePickPromo(BabyDogePawsGameRequestParam param) {
+        param.user.tasks.put("PickPromo", ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
             try {
                 babyDogePawsApi.pickPromo(param);
             } catch (Throwable t) {
                 LOGGER.error("[执行采集促销奖励task发生异常]-{}", param.user.phoneNumber, t);
             }
-        }, 0L, 1L, TimeUnit.HOURS);
+        }, 0L, 1L, TimeUnit.HOURS));
     }
 
     /**
      * 定时挖矿
      *
      * @param param {@link BabyDogePawsGameRequestParam}
-     * @return 任务
      */
-    private ScheduledFuture<?> scheduleMine(BabyDogePawsGameRequestParam param) {
-        return MINER.scheduleAtFixedRate(() -> {
-            try {
-                babyDogePawsApi.mine(param);
-            } catch (Throwable t) {
-                LOGGER.error("[执行挖矿task发生异常]-{}", param.user.phoneNumber, t);
-            }
-        }, 0L, BabyDogePawsUser.MINE_INTERVAL, TimeUnit.SECONDS);
+    private void scheduleMine(BabyDogePawsGameRequestParam param) {
+        // 能量充满所需时间（秒）
+        int timeToFullyCharge = 0;
+        try {
+            // 剩余能量
+            int remainingEnergy;
+            // 能量上限
+            int maxEnergy;
+            do {
+                @SuppressWarnings("unchecked")
+                var userInfo = (Map<String, Object>)babyDogePawsApi.mine(param).get("user");
+                maxEnergy = (int) userInfo.getOrDefault("max_energy", 0);
+                remainingEnergy = (int) userInfo.getOrDefault("energy", 0);
+            } while (remainingEnergy != 0);
+            timeToFullyCharge = Math.ceilDiv(maxEnergy, 3);
+        } catch (Throwable t) {
+            LOGGER.error("[执行挖矿task发生异常]-{}", param.user.phoneNumber, t);
+        } finally {
+            param.user.tasks.put("Mine",
+                    MINER.schedule(() -> scheduleMine(param),
+                            // 游戏服务器宕机的时候，这个值为0，此时设置一个固定延迟调度直到服务器恢复
+                            timeToFullyCharge == 0 ? 60 : timeToFullyCharge,
+                            TimeUnit.SECONDS)
+            );
+        }
     }
 
     /**
      * 定时升级卡片
      *
      * @param param {@link BabyDogePawsGameRequestParam}
-     * @return 任务
      */
-    private ScheduledFuture<?> scheduleUpgradeCard(BabyDogePawsGameRequestParam param) {
-        return CARD_UP_GRADER.scheduleAtFixedRate(() -> {
+    private void scheduleUpgradeCard(BabyDogePawsGameRequestParam param) {
+        param.user.tasks.put("UpgradeCard", CARD_UP_GRADER.scheduleAtFixedRate(() -> {
             try {
                 var balance = new BigDecimal(babyDogePawsApi.getMe(param).getOrDefault("balance", BigDecimal.ZERO).toString());
                 var cards = babyDogePawsApi.listCards(param);
@@ -149,7 +145,7 @@ public class BabyDogePawsTask {
             } catch (Throwable t) {
                 LOGGER.error("[执行升级卡片task发生异常]-{}", param.user.phoneNumber, t);
             }
-        }, 0L, 3L, TimeUnit.MINUTES);
+        }, 0L, 3L, TimeUnit.MINUTES));
     }
 
     /**

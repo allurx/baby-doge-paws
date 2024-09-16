@@ -2,8 +2,7 @@ package red.zyc.babydogepaws.model.persistent;
 
 import red.zyc.babydogepaws.common.util.ApplicationContextHolder;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
@@ -11,9 +10,6 @@ import java.util.concurrent.ScheduledFuture;
  * @author allurx
  */
 public class BabyDogePawsUser {
-
-    public static final int MINE_INTERVAL = 2400 / 4;
-    public static final int MINE_COUNT = 200;
 
     public Integer id;
     public String country;
@@ -29,7 +25,7 @@ public class BabyDogePawsUser {
     public volatile String xApiKey;
     public volatile String authParam;
     public volatile Map<String, Object> data;
-    public volatile List<ScheduledFuture<?>> tasks = new ArrayList<>();
+    public volatile Map<String, ScheduledFuture<?>> tasks = new HashMap<>();
     public volatile boolean tasksCanceled = false;
 
     public String chromeDataDir() {
@@ -40,7 +36,7 @@ public class BabyDogePawsUser {
      * 取消用户的所有任务
      */
     public void cancelAllTask() {
-        tasks.forEach(scheduledFuture -> scheduledFuture.cancel(false));
+        tasks.values().forEach(scheduledFuture -> scheduledFuture.cancel(false));
         tasksCanceled = true;
     }
 }
