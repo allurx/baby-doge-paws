@@ -2,12 +2,14 @@ package red.zyc.babydogepaws.game;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import red.zyc.babydogepaws.config.BabyDogePawsProperties;
 import red.zyc.babydogepaws.dao.CardMapper;
+import red.zyc.babydogepaws.dao.MiningInfoMapper;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.persistent.Card;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
+import red.zyc.babydogepaws.model.request.Mine;
 import red.zyc.babydogepaws.model.request.PickChannel;
 import red.zyc.babydogepaws.model.request.UpgradeCard;
 import red.zyc.babydogepaws.model.response.Channel;
@@ -26,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
@@ -48,13 +51,15 @@ public class BabyDogePawsTask {
     private static final ScheduledThreadPoolExecutor ONE_TIME_TASK_HITTER = new ScheduledThreadPoolExecutor(0, Thread.ofVirtual().name("OneTimeMissionHitter-", 0).factory());
     private final BabyDogePawsApi babyDogePawsApi;
     private final CardMapper cardMapper;
+    private final MiningInfoMapper miningInfoMapper;
+    private final BabyDogePawsProperties babyDogePawsProperties;
 
-    @Value("${baby-doge-paws.card-upgrade-info-tracker}")
-    private List<String> trackers;
 
-    public BabyDogePawsTask(BabyDogePawsApi babyDogePawsApi, CardMapper cardMapper) {
+    public BabyDogePawsTask(BabyDogePawsApi babyDogePawsApi, CardMapper cardMapper, MiningInfoMapper miningInfoMapper, BabyDogePawsProperties babyDogePawsProperties) {
         this.babyDogePawsApi = babyDogePawsApi;
         this.cardMapper = cardMapper;
+        this.miningInfoMapper = miningInfoMapper;
+        this.babyDogePawsProperties = babyDogePawsProperties;
     }
 
     /**
@@ -105,20 +110,41 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     private void scheduleMine(BabyDogePawsGameRequestParam param) {
-        // 能量充满所需时间（秒）
         int timeToFullyCharge = 0;
         try {
-            // 剩余能量
             int remainingEnergy;
-            // 能量上限
             int maxEnergy;
+            int earnPerTap;
+            int count;
+            int mined;
+            String draw;
             do {
+
+                // 挖矿请求
+                count = ThreadLocalRandom.current().nextInt(1, 9);
+                var miningInfo = babyDogePawsApi.mine(new Mine(param.user, count));
+
+                // 挖矿请求返回的用户信息
                 @SuppressWarnings("unchecked")
-                var userInfo = (Map<String, Object>)babyDogePawsApi.mine(param).get("user");
-                maxEnergy = (int) userInfo.getOrDefault("max_energy", 0);
+                var userInfo = (Map<String, Object>) miningInfo.get("user");
                 remainingEnergy = (int) userInfo.getOrDefault("energy", 0);
+                maxEnergy = (int) userInfo.getOrDefault("max_energy", 0);
+                earnPerTap = (int) userInfo.getOrDefault("earn_per_tap", 0);
+
+                // 挖矿请求返回的挖矿信息
+                @SuppressWarnings("unchecked")
+                var mineInfo = (Map<String, Object>) miningInfo.get("mine");
+                mined = (int) mineInfo.getOrDefault("mined", 0);
+
+                // 挖矿请求返回的奖励信息
+                draw = JACKSON_OPERATOR.toJsonString(miningInfo.get("draw"));
+
+                // 能量充满所需时间（秒）
+                timeToFullyCharge = Math.ceilDiv(maxEnergy, 3);
+
+                miningInfoMapper.saveMiningInfo(param.user.id, earnPerTap, count, mined, remainingEnergy, draw);
+
             } while (remainingEnergy != 0);
-            timeToFullyCharge = Math.ceilDiv(maxEnergy, 3);
         } catch (Throwable t) {
             LOGGER.error("[执行挖矿task发生异常]-{}", param.user.phoneNumber, t);
         } finally {
@@ -195,9 +221,11 @@ public class BabyDogePawsTask {
                         (Boolean) cardMap.get("is_available")))
 
                 // 用新号来追踪卡片升级信息
-                .peek(upgradeCard -> trackers.stream()
-                        .filter(s -> s.equals(user.phoneNumber))
-                        .forEach(s -> cardMapper.saveOrUpdateCard(upgradeCard.card, upgradeCard.upgradeInfo)))
+                .peek(upgradeCard -> {
+                    if(babyDogePawsProperties.cardUpgradeInfoTracker().contains(user.phoneNumber)){
+                        cardMapper.saveOrUpdateCard(upgradeCard.card, upgradeCard.upgradeInfo);
+                    }
+                })
 
                 // 注意：available变成true后，之前存在的requirement就会变成null
                 .filter(upgradeCard -> upgradeCard.available)

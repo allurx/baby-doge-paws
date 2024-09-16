@@ -7,11 +7,11 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.common.util.Commons;
 import red.zyc.babydogepaws.common.util.Mails;
+import red.zyc.babydogepaws.config.BabyDogePawsProperties;
 import red.zyc.babydogepaws.dao.LoginInfoMapper;
 import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsException;
@@ -50,22 +50,22 @@ public class BabyDogePaws {
     private final UserMapper userMapper;
     private final LoginInfoMapper loginInfoMapper;
     private final BabyDogePawsTask babyDogePawsTask;
-
-    @Value("${baby-doge-paws.bootstrap}")
-    private List<String> bootstrap;
+    private final BabyDogePawsProperties babyDogePawsProperties;
 
     public BabyDogePaws(UserMapper userMapper,
                         LoginInfoMapper loginInfoMapper,
-                        BabyDogePawsTask babyDogePawsTask) {
+                        BabyDogePawsTask babyDogePawsTask, BabyDogePawsProperties babyDogePawsProperties) {
         this.userMapper = userMapper;
         this.loginInfoMapper = loginInfoMapper;
         this.babyDogePawsTask = babyDogePawsTask;
+        this.babyDogePawsProperties = babyDogePawsProperties;
     }
 
     /**
      * 启动
      */
     public void bootstrap() {
+        var bootstrap = babyDogePawsProperties.bootstrap();
         if (bootstrap.isEmpty()) {
             userMapper.listBabyDogeUsers().forEach(user -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user)));
         } else {

@@ -10,6 +10,7 @@ import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsApiException;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
+import red.zyc.babydogepaws.model.request.Mine;
 import red.zyc.babydogepaws.model.request.PickChannel;
 import red.zyc.babydogepaws.model.request.UpgradeCard;
 
@@ -238,7 +239,7 @@ public class BabyDogePawsApi {
      * @param param {@link BabyDogePawsGameRequestParam}
      * @return 挖矿后的信息
      */
-    public Map<String, Object> mine(BabyDogePawsGameRequestParam param) {
+    public Map<String, Object> mine(Mine param) {
         return CLIENT.sendAsync(MINE.build(param), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApply(response -> {
                     if (response.statusCode() != 200) {
