@@ -27,6 +27,9 @@ public enum ResponseMessage {
 
     ILLEGAL_MINE_COUNT("mineCountMin必须小于mineCountMax", "F0004"),
 
+    ILLEGAL_FARM_AMOUNT("amount必须大于0", "F0005"),
+    NO_COMPLETED_TASKS_WITH_REWARDS("没有已解决且已拿到奖励的任务", "F0005"),
+
 
     ;
 

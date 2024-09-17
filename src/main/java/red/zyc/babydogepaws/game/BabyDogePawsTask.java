@@ -215,6 +215,7 @@ public class BabyDogePawsTask {
                 var channels = ((List<Map<String, Object>>) babyDogePawsApi.listChannels(param).getOrDefault("channels", new ArrayList<>()))
                         .stream().map(channel -> new Channel(
                                 Long.parseLong(channel.get("id").toString()),
+                                Long.parseLong(channel.get("reward").toString()),
                                 (boolean) channel.get("is_resolved"),
                                 (boolean) channel.get("is_reward_taken"),
                                 (boolean) channel.get("is_premium")

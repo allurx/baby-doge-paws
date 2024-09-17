@@ -7,11 +7,11 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.common.util.Commons;
 import red.zyc.babydogepaws.common.util.Mails;
-import red.zyc.babydogepaws.config.BabyDogePawsProperties;
 import red.zyc.babydogepaws.dao.LoginInfoMapper;
 import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsException;
@@ -25,6 +25,7 @@ import red.zyc.kit.selenium.Mode;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -47,29 +48,26 @@ public class BabyDogePaws {
     private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePaws.class);
     private static final String BABY_DOGE_PAWS_URL = "https://web.telegram.org/a/#7413313712";
 
+    private final Environment environment;
     private final UserMapper userMapper;
     private final LoginInfoMapper loginInfoMapper;
     private final BabyDogePawsTask babyDogePawsTask;
-    private final BabyDogePawsProperties babyDogePawsProperties;
 
-    public BabyDogePaws(UserMapper userMapper,
+    public BabyDogePaws(Environment environment, UserMapper userMapper,
                         LoginInfoMapper loginInfoMapper,
-                        BabyDogePawsTask babyDogePawsTask, BabyDogePawsProperties babyDogePawsProperties) {
+                        BabyDogePawsTask babyDogePawsTask) {
+        this.environment = environment;
         this.userMapper = userMapper;
         this.loginInfoMapper = loginInfoMapper;
         this.babyDogePawsTask = babyDogePawsTask;
-        this.babyDogePawsProperties = babyDogePawsProperties;
     }
 
     /**
      * 启动
      */
     public void bootstrap() {
-        var bootstrap = babyDogePawsProperties.bootstrap();
-        if (bootstrap.isEmpty()) {
+        if(Arrays.asList(environment.getActiveProfiles()).contains("prod")){
             userMapper.listBabyDogeUsers().forEach(user -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user)));
-        } else {
-            bootstrap.stream().map(userMapper::getBabyDogeUser).forEach(user -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user)));
         }
     }
 

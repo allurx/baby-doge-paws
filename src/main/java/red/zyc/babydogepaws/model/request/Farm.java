@@ -13,24 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package red.zyc.babydogepaws.config;
-
-import org.springframework.boot.context.properties.ConfigurationProperties;
+package red.zyc.babydogepaws.model.request;
 
 import java.util.List;
 
 /**
  * @author allurx
  */
-@ConfigurationProperties(prefix = "baby-doge-paws")
-public record BabyDogePawsProperties(
-        Chrome chrome,
-        List<String> cardUpgradeInfoTracker
+public class Farm {
 
-) {
-
-
-    public record Chrome(String rootDataDir) {
-    }
-
+    public List<String> phoneNumbers;
+    public long amount;
 }

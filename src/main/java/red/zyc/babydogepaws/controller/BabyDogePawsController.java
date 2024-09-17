@@ -4,13 +4,17 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.game.BabyDogePawsApi;
 import red.zyc.babydogepaws.game.BabyDogePawsTask;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
+import red.zyc.babydogepaws.model.request.Farm;
+import red.zyc.babydogepaws.model.request.ResolveChannel;
 import red.zyc.babydogepaws.model.response.BabyDogePawsUserVo;
+import red.zyc.babydogepaws.model.response.Channel;
 import red.zyc.babydogepaws.model.response.base.Response;
 import red.zyc.babydogepaws.model.response.base.ResponseMessage;
 
@@ -22,10 +26,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import static red.zyc.babydogepaws.common.constant.Constants.VOID;
 import static red.zyc.babydogepaws.model.response.base.Response.ok;
-import static red.zyc.babydogepaws.model.response.base.ResponseMessage.ILLEGAL_MINE_COUNT;
+import static red.zyc.babydogepaws.model.response.base.ResponseMessage.*;
 import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
 /**
@@ -43,6 +48,52 @@ public class BabyDogePawsController {
         this.userMapper = userMapper;
         this.babyDogePawsApi = babyDogePawsApi;
         this.babyDogePawsTask = babyDogePawsTask;
+    }
+
+    @Operation(summary = "启动用户所有定时任务")
+    @PostMapping("/bootstrap")
+    public Response<Void> bootstrap(//@Parameter(ref = PARAMETER_COMPONENT_USER_PHONE_NUMBER)
+                                    String phoneNumber) {
+        return Optional.ofNullable(userMapper.getBabyDogeUser(phoneNumber))
+                .map(user -> {
+                    babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user));
+                    return ok(VOID);
+                })
+                .orElse(ok(ResponseMessage.MISSING_USER));
+    }
+
+    @Operation(summary = "刷paws")
+    @PostMapping("/farm")
+    public Response<Void> farm(@RequestParam String phoneNumber, @RequestParam long amount) {
+        if (amount <= 0) {
+            return ok(ILLEGAL_FARM_AMOUNT);
+        }
+        return Optional.ofNullable(userMapper.getBabyDogeUser(phoneNumber))
+                .map(BabyDogePawsGameRequestParam::new)
+                .flatMap(param -> ((List<Map<String, Object>>) babyDogePawsApi.listChannels(param).getOrDefault("channels", new ArrayList<>()))
+                        .stream()
+                        .map(channel -> new Channel(
+                                Long.parseLong(channel.get("id").toString()),
+                                Long.parseLong(channel.get("reward").toString()),
+                                (boolean) channel.get("is_resolved"),
+                                (boolean) channel.get("is_reward_taken"),
+                                (boolean) channel.get("is_premium")))
+                        .filter(channel -> channel.isResolved() && channel.isRewardTaken())
+                        .max(Comparator.comparing(Channel::reward))
+                        .map(channel -> new ResolveChannel(param.user, channel)))
+                .map(resolveChannel -> {
+                    int times = (int) Math.ceilDiv(amount, resolveChannel.channel.reward());
+                    IntStream.range(0, times).parallel().forEach(value -> babyDogePawsApi.pickChannel(resolveChannel));
+                    return ok(VOID);
+                }).orElse(ok(NO_COMPLETED_TASKS_WITH_REWARDS));
+
+    }
+
+    @Operation(summary = "批量刷paws")
+    @PostMapping("/batchFarm")
+    public Response<Void> batchFarm(@RequestBody Farm farm) {
+        farm.phoneNumbers.stream().parallel().forEach(phoneNumber -> farm(phoneNumber, farm.amount));
+        return ok();
     }
 
     @Operation(summary = "修改卡牌升级限制")
@@ -82,18 +133,6 @@ public class BabyDogePawsController {
                 .map(BabyDogePawsGameRequestParam::new)
                 .map(babyDogePawsApi::listFriends)
                 .orElse(new HashMap<>()));
-    }
-
-    @Operation(summary = "启动用户所有定时任务")
-    @PostMapping("/bootstrap")
-    public Response<Void> bootstrap(//@Parameter(ref = PARAMETER_COMPONENT_USER_PHONE_NUMBER)
-                                    String phoneNumber) {
-        return Optional.ofNullable(userMapper.getBabyDogeUser(phoneNumber))
-                .map(user -> {
-                    babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user));
-                    return ok(VOID);
-                })
-                .orElse(ok(ResponseMessage.MISSING_USER));
     }
 
     @Operation(summary = "获取用户所有卡片的升级信息")
