@@ -93,6 +93,27 @@ public class BabyDogePawsController {
 
     }
 
+    @Operation(summary = "给所有余额小于amount的用户刷到该目标数量的paws")
+    @PostMapping("/farmAllToTarget")
+    public Response<Void> farmAllToTarget(@RequestParam long amount) {
+        record Temp(long balance, String phoneNumber) {
+
+        }
+        if (amount <= 0) {
+            return ok(ILLEGAL_FARM_AMOUNT);
+        }
+        NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR.execute(() -> userMapper.listBabyDogeUsers()
+                .stream()
+                .map(user -> {
+                    var me = babyDogePawsApi.getMe(new BabyDogePawsGameRequestParam(user));
+                    var balance = Long.parseLong(me.getOrDefault("balance", BigDecimal.ZERO).toString());
+                    return new Temp(balance, user.phoneNumber);
+                })
+                .filter(temp -> temp.balance < amount)
+                .forEach(temp -> NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR.execute(() -> farm(temp.phoneNumber, amount - temp.balance))));
+        return ok();
+    }
+
     @Operation(summary = "给指定的用户集合刷paws")
     @PostMapping("/farmAll")
     public Response<Void> farmAll(@RequestBody FarmAll farmAll) {
