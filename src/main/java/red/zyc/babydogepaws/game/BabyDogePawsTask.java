@@ -10,7 +10,7 @@ import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.persistent.Card;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.model.request.Mine;
-import red.zyc.babydogepaws.model.request.PickChannel;
+import red.zyc.babydogepaws.model.request.ResolveChannel;
 import red.zyc.babydogepaws.model.request.UpgradeCard;
 import red.zyc.babydogepaws.model.response.Channel;
 
@@ -18,15 +18,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -75,6 +72,7 @@ public class BabyDogePawsTask {
         schedulePickPromo(param);
         scheduleMine(param);
         scheduleUpgradeCard(param);
+        scheduleResolveChannel(param);
     }
 
     /**
@@ -136,7 +134,7 @@ public class BabyDogePawsTask {
             int count;
             int mined;
             String draw;
-            do {
+            while (true) {
 
                 // 挖矿请求
                 count = ThreadLocalRandom.current().nextInt(mineCountMin, mineCountMax);
@@ -161,9 +159,20 @@ public class BabyDogePawsTask {
                 // 能量充满所需时间（秒）
                 timeToFullyCharge = Math.ceilDiv(maxEnergy, 3);
 
+                // 保存本次挖矿信息
                 miningInfoMapper.saveMiningInfo(param.user.id, earnPerTap, count, mined, remainingEnergy, draw);
 
-            } while (remainingEnergy != 0);
+                // 能量用完后，如果有全能量Boosts可用的话就使用
+                if (remainingEnergy == 0) {
+                    var fullEnergyCountBoosts = (int) babyDogePawsApi.getBoosts(param).getOrDefault("current_full_energy_count", -1);
+                    if (fullEnergyCountBoosts > 0) {
+                        // 下一次循环能量应该充满了
+                        babyDogePawsApi.useFullEnergyBoosts(param);
+                    } else {
+                        break;
+                    }
+                }
+            }
         } catch (Throwable t) {
             LOGGER.error("[执行挖矿task发生异常]-{}", param.user.phoneNumber, t);
         } finally {
@@ -194,32 +203,36 @@ public class BabyDogePawsTask {
     }
 
     /**
-     * 定时采集任务奖励
+     * todo 解决完任务后需要领取任务奖励
+     * 定时解决任务
      *
      * @param param {@link BabyDogePawsGameRequestParam}
-     * @return 任务
      */
-    private ScheduledFuture<?> schedulePickChannel(BabyDogePawsGameRequestParam param) {
-        return ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
+    private void scheduleResolveChannel(BabyDogePawsGameRequestParam param) {
+        ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
             try {
                 @SuppressWarnings("unchecked")
-                var channels = (List<Map<String, Object>>) babyDogePawsApi.listChannels(param).getOrDefault("channels", new ArrayList<>());
-                channels.stream().parallel()
-                        .map(channel -> new Channel(channel.get("id").toString(), channel.get("invite_link").toString(), (boolean) channel.get("is_available")))
-                        .filter(Channel::isAvailable)
-                        .forEach(channel -> inviteLink(channel.inviteLink())
-                                .ifPresent(uri -> CLIENT.sendAsync(HttpRequest.newBuilder().uri(uri).GET().build(), HttpResponse.BodyHandlers.discarding()).thenAccept(response -> {
-                                    LOGGER.info("[点击邀请链接响应成功]:{}", channel.inviteLink());
-                                    babyDogePawsApi.pickChannel(new PickChannel(param.user, channel));
-                                }).exceptionally(t -> {
-                                    LOGGER.error("[点击邀请链接响应失败]:{}", channel.inviteLink(), t);
-                                    babyDogePawsApi.pickChannel(new PickChannel(param.user, channel));
-                                    return null;
-                                }).join()));
+                var channels = ((List<Map<String, Object>>) babyDogePawsApi.listChannels(param).getOrDefault("channels", new ArrayList<>()))
+                        .stream().map(channel -> new Channel(
+                                Long.parseLong(channel.get("id").toString()),
+                                (boolean) channel.get("is_resolved"),
+                                (boolean) channel.get("is_reward_taken"),
+                                (boolean) channel.get("is_premium")
+                        )).toList();
+
+                // 解决任务
+                channels.stream()
+                        .filter(channel -> !channel.isPremium() && !channel.isResolved())
+                        .forEach(channel -> babyDogePawsApi.resolveChannel(new ResolveChannel(param.user, channel)));
+
+                // 采集已解决并且没有拿过奖励的任务，任务解决后一般是1个小时可以采集奖励
+                channels.stream()
+                        .filter(channel -> channel.isResolved() && !channel.isRewardTaken())
+                        .forEach(channel -> babyDogePawsApi.pickChannel(new ResolveChannel(param.user, channel)));
             } catch (Throwable t) {
-                LOGGER.error("[执行采集任务奖励task发生异常]-{}", param.user.phoneNumber, t);
+                LOGGER.error("[执行解决任务task发生异常]-{}", param.user.phoneNumber, t);
             }
-        }, 0L, 1L, TimeUnit.HOURS);
+        }, 0L, 90L, TimeUnit.MINUTES);
     }
 
     /**

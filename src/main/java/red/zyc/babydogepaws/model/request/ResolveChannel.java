@@ -8,14 +8,14 @@ import red.zyc.babydogepaws.model.response.Channel;
  *
  * @author allurx
  */
-public class PickChannel extends BabyDogePawsGameRequestParam {
+public class ResolveChannel extends BabyDogePawsGameRequestParam {
 
     /**
      * {@link Channel}
      */
     public final Channel channel;
 
-    public PickChannel(BabyDogePawsUser user, Channel channel) {
+    public ResolveChannel(BabyDogePawsUser user, Channel channel) {
         super(user);
         this.channel = channel;
     }

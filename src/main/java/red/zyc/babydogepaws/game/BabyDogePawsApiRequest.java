@@ -2,7 +2,7 @@ package red.zyc.babydogepaws.game;
 
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.model.request.Mine;
-import red.zyc.babydogepaws.model.request.PickChannel;
+import red.zyc.babydogepaws.model.request.ResolveChannel;
 import red.zyc.babydogepaws.model.request.UpgradeCard;
 
 import java.net.URI;
@@ -103,7 +103,7 @@ public final class BabyDogePawsApiRequest {
             }
         },
 
-        LIST_CHANNELS {
+        LIST_CHANNEL {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
                 return HttpRequest.newBuilder()
@@ -114,15 +114,28 @@ public final class BabyDogePawsApiRequest {
             }
         },
 
+        RESOLVE_CHANNEL {
+            @Override
+            public HttpRequest build(BabyDogePawsGameRequestParam param) {
+                ResolveChannel resolveChannel = (ResolveChannel) param;
+                return HttpRequest.newBuilder()
+                        .uri(URI.create("https://backend.babydogepawsbot.com/channels-resolve"))
+                        .header("content-type", "application/json")
+                        .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
+                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("channel_id", resolveChannel.channel.id()))))
+                        .build();
+            }
+        },
+
         PICK_CHANNEL {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
-                PickChannel pickChannel = (PickChannel) param;
+                ResolveChannel resolveChannel = (ResolveChannel) param;
                 return HttpRequest.newBuilder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/channels"))
                         .header("content-type", "application/json")
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
-                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("channelId", pickChannel.channel.id()))))
+                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("channel_id", resolveChannel.channel.id()))))
                         .build();
             }
         },
@@ -156,6 +169,29 @@ public final class BabyDogePawsApiRequest {
                         .uri(URI.create("https://backend.babydogepawsbot.com/friends"))
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
                         .GET()
+                        .build();
+            }
+        },
+
+        GET_BOOSTS {
+            @Override
+            public HttpRequest build(BabyDogePawsGameRequestParam param) {
+                return HttpRequest.newBuilder()
+                        .uri(URI.create("https://backend.babydogepawsbot.com/boosts"))
+                        .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
+                        .GET()
+                        .build();
+            }
+        },
+
+        USE_FULL_ENERGY_BOOSTS {
+            @Override
+            public HttpRequest build(BabyDogePawsGameRequestParam param) {
+                return HttpRequest.newBuilder()
+                        .uri(URI.create("https://backend.babydogepawsbot.com/boosts"))
+                        .header("content-type", "application/json")
+                        .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
+                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("boost", "full_energy"))))
                         .build();
             }
         },
