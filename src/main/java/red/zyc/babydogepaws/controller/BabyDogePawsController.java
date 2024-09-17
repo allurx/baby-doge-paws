@@ -87,7 +87,7 @@ public class BabyDogePawsController {
                         .map(channel -> new ResolveChannel(param.user, channel)))
                 .map(resolveChannel -> {
                     int times = (int) Math.ceilDiv(amount, resolveChannel.channel.reward());
-                    IntStream.range(0, times).parallel().forEach(value -> babyDogePawsApi.pickChannel(resolveChannel));
+                    IntStream.range(0, times).forEach(value -> NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR.execute(() -> babyDogePawsApi.pickChannel(resolveChannel)));
                     return ok(VOID);
                 }).orElse(ok(NO_COMPLETED_TASKS_WITH_REWARDS));
 
