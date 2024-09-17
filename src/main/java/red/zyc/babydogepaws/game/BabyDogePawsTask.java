@@ -17,8 +17,6 @@ import red.zyc.babydogepaws.model.response.Channel;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -37,12 +35,10 @@ import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 @Service
 public class BabyDogePawsTask {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePawsTask.class);
     public static volatile double limit = 500;
     public static volatile int mineCountMin = 50;
     public static volatile int mineCountMax = 201;
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePawsTask.class);
-    private static final HttpClient CLIENT = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10L)).build();
 
     private static final ScheduledThreadPoolExecutor AUTHENTICATOR = new ScheduledThreadPoolExecutor(0, Thread.ofVirtual().name("Authenticator-", 0).factory());
     private static final ScheduledThreadPoolExecutor MINER = new ScheduledThreadPoolExecutor(0, Thread.ofVirtual().name("Miner-", 0).factory());
