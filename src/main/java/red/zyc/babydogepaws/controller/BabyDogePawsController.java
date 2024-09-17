@@ -87,8 +87,7 @@ public class BabyDogePawsController {
                         .map(channel -> new ResolveChannel(param.user, channel)))
                 .map(resolveChannel -> {
                     int times = (int) Math.ceilDiv(amount, resolveChannel.channel.reward());
-                    IntStream.range(0, times).parallel()
-                            .forEach(value -> NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR.execute(() -> babyDogePawsApi.pickChannel(resolveChannel)));
+                    IntStream.range(0, times).parallel().forEach(value -> babyDogePawsApi.pickChannel(resolveChannel));
                     return ok(VOID);
                 }).orElse(ok(NO_COMPLETED_TASKS_WITH_REWARDS));
 
@@ -100,7 +99,7 @@ public class BabyDogePawsController {
         if (farmAll.amount <= 0) {
             return ok(ILLEGAL_FARM_AMOUNT);
         }
-        farmAll.phoneNumbers.stream().parallel().forEach(phoneNumber -> NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR.execute(() -> farm(phoneNumber, farmAll.amount)));
+        farmAll.phoneNumbers.forEach(phoneNumber -> NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR.execute(() -> farm(phoneNumber, farmAll.amount)));
         return ok();
     }
 
@@ -112,7 +111,6 @@ public class BabyDogePawsController {
         }
         userMapper.listBabyDogeUsers()
                 .stream()
-                .parallel()
                 .filter(user -> !farmAllExclude.excludedPhoneNumbers.contains(user.phoneNumber))
                 .forEach(user -> NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR.execute(() -> farm(user.phoneNumber, farmAllExclude.amount)));
         return ok();
