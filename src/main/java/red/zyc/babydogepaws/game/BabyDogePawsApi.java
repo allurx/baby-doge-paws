@@ -37,6 +37,9 @@ public class BabyDogePawsApi {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePawsApi.class);
     private static final HttpClient CLIENT = HttpClient.newBuilder()
+            // 使用HTTP_2时，同时发起的请求太多会发生以下问题
+            // java.io.IOException: too many concurrent streams
+            // java.io.IOException: /10.5.0.10:58614: GOAWAY received
             .version(HttpClient.Version.HTTP_1_1)
             .connectTimeout(Duration.ofSeconds(30L))
             .executor(Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("BabyDogePawsApiRequester-", 0).factory()))
