@@ -6,8 +6,10 @@ import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.config.BabyDogePawsProperties;
 import red.zyc.babydogepaws.dao.CardMapper;
 import red.zyc.babydogepaws.dao.MiningInfoMapper;
+import red.zyc.babydogepaws.dao.UserConfigMapper;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.persistent.Card;
+import red.zyc.babydogepaws.model.persistent.UserConfig;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.model.request.Mine;
 import red.zyc.babydogepaws.model.request.ResolveChannel;
@@ -16,7 +18,6 @@ import red.zyc.babydogepaws.model.response.Channel;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -36,7 +37,6 @@ import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 public class BabyDogePawsTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePawsTask.class);
-    public static volatile double limit = 500;
     public static volatile int mineCountMin = 50;
     public static volatile int mineCountMax = 201;
 
@@ -47,13 +47,15 @@ public class BabyDogePawsTask {
     private final BabyDogePawsApi babyDogePawsApi;
     private final CardMapper cardMapper;
     private final MiningInfoMapper miningInfoMapper;
+    private final UserConfigMapper userConfigMapper;
     private final BabyDogePawsProperties babyDogePawsProperties;
 
 
-    public BabyDogePawsTask(BabyDogePawsApi babyDogePawsApi, CardMapper cardMapper, MiningInfoMapper miningInfoMapper, BabyDogePawsProperties babyDogePawsProperties) {
+    public BabyDogePawsTask(BabyDogePawsApi babyDogePawsApi, CardMapper cardMapper, MiningInfoMapper miningInfoMapper, UserConfigMapper userConfigMapper, BabyDogePawsProperties babyDogePawsProperties) {
         this.babyDogePawsApi = babyDogePawsApi;
         this.cardMapper = cardMapper;
         this.miningInfoMapper = miningInfoMapper;
+        this.userConfigMapper = userConfigMapper;
         this.babyDogePawsProperties = babyDogePawsProperties;
     }
 
@@ -264,7 +266,7 @@ public class BabyDogePawsTask {
                 .min(Comparator.<UpgradeCard, BigDecimal>comparing(upgradeCard -> upgradeCard.upgradeInfo.cost.divide(upgradeCard.upgradeInfo.profit, 2, RoundingMode.HALF_UP))
                         .thenComparing(upgradeCard -> upgradeCard.upgradeInfo.cost))
                 .ifPresent(upgradeCard -> {
-                    if (canUpgradeCard(upgradeCard)) {
+                    if (canUpgradeCard(upgradeCard, Optional.ofNullable(userConfigMapper.getUserConfig(user.id)).map(UserConfig::maximumCardUpgradePrice).orElse(BigDecimal.valueOf(500)))) {
                         var map = babyDogePawsApi.upgradeCard(upgradeCard);
                         var latestBalance = new BigDecimal(map.getOrDefault("balance", BigDecimal.ZERO).toString());
                         var latestCards = (List<Map<String, Object>>) map.getOrDefault("cards", new ArrayList<>());
@@ -273,7 +275,7 @@ public class BabyDogePawsTask {
                 });
     }
 
-    private boolean canUpgradeCard(UpgradeCard upgradeCard) {
+    private boolean canUpgradeCard(UpgradeCard upgradeCard, BigDecimal maximumCardUpgradePrice) {
 
         UpgradeCard.UpgradeInfo upgradeInfo = upgradeCard.upgradeInfo;
 
@@ -283,26 +285,11 @@ public class BabyDogePawsTask {
                 upgradeCard.balance.compareTo(upgradeInfo.cost) >= 0
 
                         // 卡片升级的价格满足一定条件
-                        && upgradeInfo.cost.divide(upgradeInfo.profit, 2, RoundingMode.HALF_UP).compareTo(BigDecimal.valueOf(limit)) < 0;
+                        && upgradeInfo.cost.divide(upgradeInfo.profit, 2, RoundingMode.HALF_UP).compareTo(maximumCardUpgradePrice) <= 0;
 
 
         // 卡片升级所需的花费不超过设置的阈值
         // && upgradeInfo.cost.compareTo(BigDecimal.valueOf(10000000)) <= 0;
     }
 
-    private Optional<URI> inviteLink(String link) {
-        try {
-            var uri = new URI(link);
-            var scheme = uri.getScheme();
-            if (scheme != null && (scheme.equals("http") || scheme.equals("https")) && uri.getHost() != null) {
-                return Optional.of(uri);
-            } else {
-                LOGGER.warn("[无效的邀请链接]:{}", link);
-                return Optional.empty();
-            }
-        } catch (Throwable t) {
-            LOGGER.error("[无效的邀请链接]:{}", link, t);
-            return Optional.empty();
-        }
-    }
 }

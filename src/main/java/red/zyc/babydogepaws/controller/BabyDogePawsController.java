@@ -108,13 +108,6 @@ public class BabyDogePawsController {
         return ok();
     }
 
-    @Operation(summary = "修改卡牌升级限制")
-    @PostMapping("/updateLimit")
-    public Response<Void> updateLimit(@RequestParam BigDecimal limit) {
-        BabyDogePawsTask.limit = limit.doubleValue();
-        return ok();
-    }
-
     @Operation(summary = "修改挖矿数量")
     @PostMapping("/updateMineCount")
     public Response<Void> updateMineCount(@RequestParam int mineCountMin, @RequestParam int mineCountMax) {
