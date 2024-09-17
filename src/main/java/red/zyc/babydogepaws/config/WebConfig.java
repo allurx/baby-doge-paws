@@ -37,9 +37,9 @@ public class WebConfig {
     public static class HeaderCheckFilter implements Filter {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(HeaderCheckFilter.class);
-        private static final String REQUIRED_HEADER_VALUE = "Zyc3.1415926";
+        private static final String REQUIRED_HEADER_VALUE = "41123b6ff55a5922fe76f1a76ca2b3f27dffd63f9242066521c1696cd6a22d26";
         private static final List<String> SWAGGER_UI_REQUEST_PREFIXES = List.of("/swagger-ui", "/v3/api-docs");
-        static final String REQUIRED_HEADER_NAME = "zyc";
+        static final String REQUIRED_HEADER_NAME = "api-key";
 
 
         @Override
