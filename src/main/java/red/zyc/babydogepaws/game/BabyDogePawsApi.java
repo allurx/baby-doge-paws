@@ -38,7 +38,7 @@ public class BabyDogePawsApi {
     private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePawsApi.class);
     private static final HttpClient CLIENT = HttpClient.newBuilder().
             connectTimeout(Duration.ofSeconds(30L))
-            .executor(Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("BabyDogePawsApiRequester-", 0).factory()))
+            .executor(Executors.newFixedThreadPool(100, Thread.ofPlatform().name("BabyDogePawsApiRequester-", 0).factory()))
             .build();
     private static final ConcurrentHashMap<Integer, ReentrantLock> USER_LOCKS = new ConcurrentHashMap<>();
     private final UserMapper userMapper;

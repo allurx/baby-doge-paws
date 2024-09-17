@@ -104,6 +104,7 @@ public class BabyDogePawsController {
         }
         NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR.execute(() -> userMapper.listBabyDogeUsers()
                 .stream()
+                .parallel()
                 .map(user -> {
                     var me = babyDogePawsApi.getMe(new BabyDogePawsGameRequestParam(user));
                     var balance = Long.parseLong(me.getOrDefault("balance", BigDecimal.ZERO).toString());
