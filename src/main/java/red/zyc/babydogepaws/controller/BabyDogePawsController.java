@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
 import static red.zyc.babydogepaws.common.constant.Constants.VOID;
@@ -41,6 +43,7 @@ import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 @RestController
 public class BabyDogePawsController {
 
+    private static final ExecutorService NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
     private final UserMapper userMapper;
     private final BabyDogePawsApi babyDogePawsApi;
     private final BabyDogePawsTask babyDogePawsTask;
@@ -84,7 +87,8 @@ public class BabyDogePawsController {
                         .map(channel -> new ResolveChannel(param.user, channel)))
                 .map(resolveChannel -> {
                     int times = (int) Math.ceilDiv(amount, resolveChannel.channel.reward());
-                    IntStream.range(0, times).parallel().forEach(value -> babyDogePawsApi.pickChannel(resolveChannel));
+                    IntStream.range(0, times).parallel()
+                            .forEach(value -> NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR.execute(() -> babyDogePawsApi.pickChannel(resolveChannel)));
                     return ok(VOID);
                 }).orElse(ok(NO_COMPLETED_TASKS_WITH_REWARDS));
 
@@ -93,18 +97,24 @@ public class BabyDogePawsController {
     @Operation(summary = "给指定的用户集合刷paws")
     @PostMapping("/farmAll")
     public Response<Void> farmAll(@RequestBody FarmAll farmAll) {
-        farmAll.phoneNumbers.stream().parallel().forEach(phoneNumber -> farm(phoneNumber, farmAll.amount));
+        if (farmAll.amount <= 0) {
+            return ok(ILLEGAL_FARM_AMOUNT);
+        }
+        farmAll.phoneNumbers.stream().parallel().forEach(phoneNumber -> NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR.execute(() -> farm(phoneNumber, farmAll.amount)));
         return ok();
     }
 
     @Operation(summary = "给指定的用户集合之外的所有用户刷paws")
     @PostMapping("/farmAllExclude")
     public Response<Void> farmAllExclude(@RequestBody FarmAllExclude farmAllExclude) {
+        if (farmAllExclude.amount <= 0) {
+            return ok(ILLEGAL_FARM_AMOUNT);
+        }
         userMapper.listBabyDogeUsers()
                 .stream()
                 .parallel()
                 .filter(user -> !farmAllExclude.excludedPhoneNumbers.contains(user.phoneNumber))
-                .forEach(user -> farm(user.phoneNumber, farmAllExclude.amount));
+                .forEach(user -> NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR.execute(() -> farm(user.phoneNumber, farmAllExclude.amount)));
         return ok();
     }
 
