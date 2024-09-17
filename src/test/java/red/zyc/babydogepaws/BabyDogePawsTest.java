@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.IntStream;
 
 import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
@@ -72,19 +73,28 @@ public class BabyDogePawsTest {
 
     @Test
     void test() {
-        var data = CLIENT.sendAsync(HttpRequest.newBuilder()
-                        .uri(URI.create("https://backend.babydogepawsbot.com/channels"))
-                        .header("content-type", "application/json")
-                        .header("x-api-key", "fb2824f774c9ce26cc9eb961a043a3c55bd9be643d6c3281d43147e028e9a250")
-                        .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("channelId", 158095140))))
-                        .build(), HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
-                        .orElseThrow(() -> new BabyDogePawsApiException("pickChannel响应结果为空")))
-                .join();
-
-        System.out.println(JACKSON_OPERATOR.toJsonString(data));
+        try (HttpClient httpClient = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://backend.babydogepawsbot.com/channels"))
+                    .header("content-type", "application/json")
+                    .header("x-api-key", "41123b6ff55a5922fe76f1a76ca2b3f27dffd63f9242066521c1696cd6a22d26")
+                    .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("channel_id", 128129701))))
+                    .build();
+            IntStream.range(0, 100).parallel().forEach(value -> httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                    .thenAccept(response -> {
+                        if (response.statusCode() != 200) {
+                            LOGGER.warn("[采集任务失败]-{}", Https.formatJsonResponse(response, true));
+                        } else {
+                            LOGGER.info("[采集任务成功]-{}", Https.formatJsonResponse(response, true));
+                        }
+                    })
+                    .join());
+        }
 
     }
+
+
+
 
     void test1() throws IOException {
         Path root = Path.of("D:\\chrome-user-data-new");
