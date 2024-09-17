@@ -11,7 +11,8 @@ import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.game.BabyDogePawsApi;
 import red.zyc.babydogepaws.game.BabyDogePawsTask;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
-import red.zyc.babydogepaws.model.request.Farm;
+import red.zyc.babydogepaws.model.request.FarmAll;
+import red.zyc.babydogepaws.model.request.FarmAllExclude;
 import red.zyc.babydogepaws.model.request.ResolveChannel;
 import red.zyc.babydogepaws.model.response.BabyDogePawsUserVo;
 import red.zyc.babydogepaws.model.response.Channel;
@@ -62,7 +63,7 @@ public class BabyDogePawsController {
                 .orElse(ok(ResponseMessage.MISSING_USER));
     }
 
-    @Operation(summary = "刷paws")
+    @Operation(summary = "给单个用户刷paws")
     @PostMapping("/farm")
     public Response<Void> farm(@RequestParam String phoneNumber, @RequestParam long amount) {
         if (amount <= 0) {
@@ -89,10 +90,21 @@ public class BabyDogePawsController {
 
     }
 
-    @Operation(summary = "批量刷paws")
-    @PostMapping("/batchFarm")
-    public Response<Void> batchFarm(@RequestBody Farm farm) {
-        farm.phoneNumbers.stream().parallel().forEach(phoneNumber -> farm(phoneNumber, farm.amount));
+    @Operation(summary = "给指定的用户集合刷paws")
+    @PostMapping("/farmAll")
+    public Response<Void> farmAll(@RequestBody FarmAll farmAll) {
+        farmAll.phoneNumbers.stream().parallel().forEach(phoneNumber -> farm(phoneNumber, farmAll.amount));
+        return ok();
+    }
+
+    @Operation(summary = "给指定的用户集合之外的所有用户刷paws")
+    @PostMapping("/farmAllExclude")
+    public Response<Void> farmAllExclude(@RequestBody FarmAllExclude farmAllExclude) {
+        userMapper.listBabyDogeUsers()
+                .stream()
+                .parallel()
+                .filter(user -> !farmAllExclude.excludedPhoneNumbers.contains(user.phoneNumber))
+                .forEach(user -> farm(user.phoneNumber, farmAllExclude.amount));
         return ok();
     }
 

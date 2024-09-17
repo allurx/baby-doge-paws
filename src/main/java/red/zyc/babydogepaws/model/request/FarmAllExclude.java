@@ -20,8 +20,8 @@ import java.util.List;
 /**
  * @author allurx
  */
-public class Farm {
+public class FarmAllExclude {
 
-    public List<String> phoneNumbers;
+    public List<String> excludedPhoneNumbers;
     public long amount;
 }
