@@ -67,8 +67,9 @@ public class BabyDogePaws {
      */
     public void bootstrap() {
         if (Arrays.asList(environment.getActiveProfiles()).contains("prod")) {
+            LOGGER.info("BabyDoge Paws is launching");
             userMapper.listBabyDogeUsers().forEach(user -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user)));
-            LOGGER.info("BabyDogePaws启动成功");
+            LOGGER.info("BabyDoge Paws launches successfully");
         }
     }
 

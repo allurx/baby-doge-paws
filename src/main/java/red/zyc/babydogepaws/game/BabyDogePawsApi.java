@@ -90,7 +90,7 @@ public class BabyDogePawsApi {
         userLock.lock();
         try {
             return param.user.tasksCanceled ? new HashMap<>() : CLIENT.sendAsync(AUTHORIZE.build(param), HttpResponse.BodyHandlers.ofString())
-                    .<Map<String, Object>>thenApply(response -> {
+                    .<Map<String, Object>>thenApplyAsync(response -> {
                         if (response.statusCode() != 200) {
 
                             LOGGER.warn("[授权失败]-{}:{}:{}", param.user.phoneNumber, param.user.authParam, Https.formatJsonResponse(response, true));
@@ -140,7 +140,7 @@ public class BabyDogePawsApi {
      */
     public Map<String, Object> getMe(BabyDogePawsGameRequestParam param) {
         return CLIENT.sendAsync(GET_ME.build(param), HttpResponse.BodyHandlers.ofString())
-                .<Map<String, Object>>thenApply(response -> {
+                .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[获取用户信息失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? getMe(param) : new HashMap<>();
@@ -161,7 +161,7 @@ public class BabyDogePawsApi {
      */
     public Map<String, Object> pickDailyBonus(BabyDogePawsGameRequestParam param) {
         return CLIENT.sendAsync(PICK_DAILY_BONUS.build(param), HttpResponse.BodyHandlers.ofString())
-                .<Map<String, Object>>thenApply(response -> {
+                .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[采集每日奖励失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? pickDailyBonus(param) : new HashMap<>();
@@ -182,7 +182,7 @@ public class BabyDogePawsApi {
      */
     public Map<String, Object> getDailyBonuses(BabyDogePawsGameRequestParam param) {
         return CLIENT.sendAsync(GET_DAILY_BONUSES.build(param), HttpResponse.BodyHandlers.ofString())
-                .<Map<String, Object>>thenApply(response -> {
+                .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[获取每日奖励内容失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? getDailyBonuses(param) : new HashMap<>();
@@ -203,7 +203,7 @@ public class BabyDogePawsApi {
      */
     public List<Map<String, Object>> listCards(BabyDogePawsGameRequestParam param) {
         return CLIENT.sendAsync(LIST_CARDS.build(param), HttpResponse.BodyHandlers.ofString())
-                .<List<Map<String, Object>>>thenApply(response -> {
+                .<List<Map<String, Object>>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[获取卡片列表失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? listCards(param) : new ArrayList<>();
@@ -224,7 +224,7 @@ public class BabyDogePawsApi {
      */
     public Map<String, Object> upgradeCard(UpgradeCard upgradeCard) {
         return CLIENT.sendAsync(UPGRADE_CARD.build(upgradeCard), HttpResponse.BodyHandlers.ofString())
-                .<Map<String, Object>>thenApply(response -> {
+                .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[卡片升级失败]-{}:{}:{}:{}:{}", upgradeCard.user.phoneNumber, upgradeCard.balance, upgradeCard.card.cardId, upgradeCard.upgradeInfo.cost, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(upgradeCard, response.statusCode()) ? upgradeCard(upgradeCard) : new HashMap<>();
@@ -245,7 +245,7 @@ public class BabyDogePawsApi {
      */
     public Map<String, Object> mine(Mine param) {
         return CLIENT.sendAsync(MINE.build(param), HttpResponse.BodyHandlers.ofString())
-                .<Map<String, Object>>thenApply(response -> {
+                .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[挖矿失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? mine(param) : new HashMap<>();
@@ -266,7 +266,7 @@ public class BabyDogePawsApi {
      */
     public Map<String, Object> listChannels(BabyDogePawsGameRequestParam param) {
         return CLIENT.sendAsync(LIST_CHANNEL.build(param), HttpResponse.BodyHandlers.ofString())
-                .<Map<String, Object>>thenApply(response -> {
+                .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[获取任务列表失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? listChannels(param) : new HashMap<>();
@@ -287,7 +287,7 @@ public class BabyDogePawsApi {
      */
     public Map<String, Object> resolveChannel(ResolveChannel resolveChannel) {
         return CLIENT.sendAsync(RESOLVE_CHANNEL.build(resolveChannel), HttpResponse.BodyHandlers.ofString())
-                .<Map<String, Object>>thenApply(response -> {
+                .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[解决任务失败]-{}:{}:{}", resolveChannel.user.phoneNumber, resolveChannel.channel.id(), Https.formatJsonResponse(response, true));
                         return authorizeSuccess(resolveChannel, response.statusCode()) ? resolveChannel(resolveChannel) : new HashMap<>();
@@ -308,7 +308,7 @@ public class BabyDogePawsApi {
      */
     public Map<String, Object> pickChannel(ResolveChannel resolveChannel) {
         return CLIENT.sendAsync(PICK_CHANNEL.build(resolveChannel), HttpResponse.BodyHandlers.ofString())
-                .<Map<String, Object>>thenApply(response -> {
+                .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[采集任务失败]-{}:{}:{}", resolveChannel.user.phoneNumber, resolveChannel.channel.id(), Https.formatJsonResponse(response, true));
                         return authorizeSuccess(resolveChannel, response.statusCode()) ? pickChannel(resolveChannel) : new HashMap<>();
@@ -329,7 +329,7 @@ public class BabyDogePawsApi {
      */
     public Map<String, Object> pickPromo(BabyDogePawsGameRequestParam param) {
         return CLIENT.sendAsync(PICK_PROMO.build(param), HttpResponse.BodyHandlers.ofString())
-                .<Map<String, Object>>thenApply(response -> {
+                .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[参与促销失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? pickPromo(param) : new HashMap<>();
@@ -350,7 +350,7 @@ public class BabyDogePawsApi {
      */
     public Map<String, Object> getPromo(BabyDogePawsGameRequestParam param) {
         return CLIENT.sendAsync(GET_PROMO.build(param), HttpResponse.BodyHandlers.ofString())
-                .<Map<String, Object>>thenApply(response -> {
+                .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[获取促销信息失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? getPromo(param) : new HashMap<>();
@@ -371,7 +371,7 @@ public class BabyDogePawsApi {
      */
     public Map<String, Object> listFriends(BabyDogePawsGameRequestParam param) {
         return CLIENT.sendAsync(LIST_FRIENDS.build(param), HttpResponse.BodyHandlers.ofString())
-                .<Map<String, Object>>thenApply(response -> {
+                .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[获取好友列表失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? listFriends(param) : new HashMap<>();
@@ -392,7 +392,7 @@ public class BabyDogePawsApi {
      */
     public Map<String, Object> getBoosts(BabyDogePawsGameRequestParam param) {
         return CLIENT.sendAsync(GET_BOOSTS.build(param), HttpResponse.BodyHandlers.ofString())
-                .<Map<String, Object>>thenApply(response -> {
+                .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[获取激励信息失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? getBoosts(param) : new HashMap<>();
@@ -413,7 +413,7 @@ public class BabyDogePawsApi {
      */
     public Map<String, Object> useFullEnergyBoosts(BabyDogePawsGameRequestParam param) {
         return CLIENT.sendAsync(USE_FULL_ENERGY_BOOSTS.build(param), HttpResponse.BodyHandlers.ofString())
-                .<Map<String, Object>>thenApply(response -> {
+                .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
                         LOGGER.warn("[使用全能量激励失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? useFullEnergyBoosts(param) : new HashMap<>();
