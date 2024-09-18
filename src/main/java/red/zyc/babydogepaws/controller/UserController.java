@@ -5,11 +5,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.game.BabyDogePawsApi;
-import red.zyc.babydogepaws.game.BabyDogePawsTask;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.model.request.FarmAll;
 import red.zyc.babydogepaws.model.request.FarmAllExclude;
@@ -17,7 +17,6 @@ import red.zyc.babydogepaws.model.request.ResolveChannel;
 import red.zyc.babydogepaws.model.response.BabyDogePawsUserVo;
 import red.zyc.babydogepaws.model.response.Channel;
 import red.zyc.babydogepaws.model.response.base.Response;
-import red.zyc.babydogepaws.model.response.base.ResponseMessage;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -33,37 +32,25 @@ import java.util.stream.IntStream;
 
 import static red.zyc.babydogepaws.common.constant.Constants.VOID;
 import static red.zyc.babydogepaws.model.response.base.Response.ok;
-import static red.zyc.babydogepaws.model.response.base.ResponseMessage.*;
+import static red.zyc.babydogepaws.model.response.base.ResponseMessage.ILLEGAL_FARM_AMOUNT;
+import static red.zyc.babydogepaws.model.response.base.ResponseMessage.NO_COMPLETED_TASKS_WITH_REWARDS;
 import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
 /**
  * @author allurx
  */
-@Tag(name = "BabyDogePaws", description = "BabyDogePaws Api")
+@Tag(name = "User", description = "BabyDogePaws User")
+@RequestMapping("/user")
 @RestController
-public class BabyDogePawsController {
+public class UserController {
 
     private static final ExecutorService NEW_VIRTUAL_THREAD_PER_TASK_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
     private final UserMapper userMapper;
     private final BabyDogePawsApi babyDogePawsApi;
-    private final BabyDogePawsTask babyDogePawsTask;
 
-    public BabyDogePawsController(UserMapper userMapper, BabyDogePawsApi babyDogePawsApi, BabyDogePawsTask babyDogePawsTask) {
+    public UserController(UserMapper userMapper, BabyDogePawsApi babyDogePawsApi) {
         this.userMapper = userMapper;
         this.babyDogePawsApi = babyDogePawsApi;
-        this.babyDogePawsTask = babyDogePawsTask;
-    }
-
-    @Operation(summary = "启动用户所有定时任务")
-    @PostMapping("/bootstrap")
-    public Response<Void> bootstrap(//@Parameter(ref = PARAMETER_COMPONENT_USER_PHONE_NUMBER)
-                                    String phoneNumber) {
-        return Optional.ofNullable(userMapper.getBabyDogeUser(phoneNumber))
-                .map(user -> {
-                    babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user));
-                    return ok(VOID);
-                })
-                .orElse(ok(ResponseMessage.MISSING_USER));
     }
 
     @Operation(summary = "给单个用户刷paws")
@@ -138,18 +125,6 @@ public class BabyDogePawsController {
         return ok();
     }
 
-    @Operation(summary = "修改挖矿数量")
-    @PostMapping("/updateMineCount")
-    public Response<Void> updateMineCount(@RequestParam int mineCountMin, @RequestParam int mineCountMax) {
-        if (mineCountMin >= mineCountMax) {
-            return ok(ILLEGAL_MINE_COUNT);
-        } else {
-            BabyDogePawsTask.mineCountMin = mineCountMin;
-            BabyDogePawsTask.mineCountMax = mineCountMax;
-            return ok();
-        }
-    }
-
     @Operation(summary = "获取用户信息")
     @GetMapping("/getUser")
     public Response<BabyDogePawsUserVo> getUser(//@Parameter(ref = PARAMETER_COMPONENT_USER_PHONE_NUMBER)
@@ -158,7 +133,6 @@ public class BabyDogePawsController {
                 .map(user -> JACKSON_OPERATOR.<BabyDogePawsUserVo>copyProperties(user, BabyDogePawsUserVo.class))
                 .orElse(null));
     }
-
 
     @Operation(summary = "获取用户好友信息")
     @GetMapping("/listFriends")

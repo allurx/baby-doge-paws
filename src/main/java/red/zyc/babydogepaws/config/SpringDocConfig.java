@@ -9,6 +9,8 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springdoc.core.properties.SwaggerUiConfigProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -65,6 +67,11 @@ public class SpringDocConfig {
 
                 ;
 
+    }
+
+    @Autowired
+    public void swaggerUiConfigProperties(SwaggerUiConfigProperties swaggerUiConfigProperties) {
+        swaggerUiConfigProperties.setDocExpansion("NONE");
     }
 
 }
