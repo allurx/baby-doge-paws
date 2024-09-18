@@ -21,14 +21,14 @@ import java.util.zip.ZipOutputStream;
 /**
  * @author allurx
  */
-public final class Mails {
+public final class MailUtil {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Mails.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MailUtil.class);
     private static final ExecutorService SEND_MAIL_EXECUTOR = Executors.newFixedThreadPool(1, Thread.ofVirtual().name("Mailer-", 0).factory());
     private static final MailServerConfiguration GMAIL_SERVER = new MailServerConfiguration("smtp.gmail.com", 465, "allurx.zyc@gmail.com", "allurx.zyc@gmail.com", "allurx.zyc@gmail.com", "mjegfzjggsxacxrq");
     private static final MailServerConfiguration QQ_SERVER = new MailServerConfiguration("smtp.qq.com", 465, "allurx@qq.com", "allurx@qq.com", "allurx@qq.com", "niqdqxyghqiyhbcg");
 
-    private Mails() {
+    private MailUtil() {
     }
 
     /**
@@ -64,7 +64,7 @@ public final class Mails {
                 // 组装zip并将其传输到ByteArrayOutputStream中
                 for (Map.Entry<String, ? extends Throwable> entry : errors.entrySet()) {
                     zipOutputStream.putNextEntry(new ZipEntry(entry.getKey() + ".txt"));
-                    zipOutputStream.write(Commons.convertThrowableToString(entry.getValue()).getBytes());
+                    zipOutputStream.write(CommonUtil.convertThrowableToString(entry.getValue()).getBytes());
                     zipOutputStream.closeEntry();
                 }
 

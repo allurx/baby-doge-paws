@@ -9,7 +9,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.RequestEntity;
 import red.zyc.babydogepaws.common.constant.Constants;
-import red.zyc.babydogepaws.common.util.Https;
+import red.zyc.babydogepaws.common.util.WebUtil;
 import red.zyc.babydogepaws.exception.BabyDogePawsApiException;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 
@@ -83,9 +83,9 @@ public class BabyDogePawsTest {
             IntStream.range(0, 100).parallel().forEach(value -> httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                     .thenAccept(response -> {
                         if (response.statusCode() != 200) {
-                            LOGGER.warn("[采集任务失败]-{}", Https.formatJsonResponse(response, true));
+                            LOGGER.warn("[采集任务失败]-{}", WebUtil.formatJsonResponse(response, true));
                         } else {
-                            LOGGER.info("[采集任务成功]-{}", Https.formatJsonResponse(response, true));
+                            LOGGER.info("[采集任务成功]-{}", WebUtil.formatJsonResponse(response, true));
                         }
                     })
                     .join());
@@ -129,7 +129,7 @@ public class BabyDogePawsTest {
                         .header("x-api-key", xApiKey)
                         .POST(HttpRequest.BodyPublishers.ofString(""))
                         .build(), HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                .thenApply(response -> WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                         .orElseThrow(() -> new BabyDogePawsApiException("pickDailyBonus响应结果为空")))
                 .join();
 
@@ -143,7 +143,7 @@ public class BabyDogePawsTest {
                         .header("x-api-key", xApiKey)
                         .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("count", ThreadLocalRandom.current().nextInt(1, 11)))))
                         .build(), HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                .thenApply(response -> WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                         .orElseThrow(() -> new BabyDogePawsApiException("mine响应结果为空")))
                 .join();
 
@@ -157,7 +157,7 @@ public class BabyDogePawsTest {
                         .header("x-api-key", xApiKey)
                         .POST(HttpRequest.BodyPublishers.ofString(JACKSON_OPERATOR.toJsonString(Map.of("id", cardId))))
                         .build(), HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                .thenApply(response -> WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                         .orElseThrow(() -> new BabyDogePawsApiException("upgradeCard响应结果为空")))
                 .join();
 
@@ -170,7 +170,7 @@ public class BabyDogePawsTest {
                         .header("x-api-key", xApiKey)
                         .GET()
                         .build(), HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                .thenApply(response -> WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                         .orElseThrow(() -> new BabyDogePawsApiException("getMe响应结果为空")))
                 .join();
 

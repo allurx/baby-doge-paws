@@ -15,9 +15,9 @@ import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 /**
  * @author allurx
  */
-public final class Https {
+public final class WebUtil {
 
-    private Https() {
+    private WebUtil() {
     }
 
     /**

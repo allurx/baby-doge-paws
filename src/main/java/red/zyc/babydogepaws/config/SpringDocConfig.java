@@ -58,7 +58,7 @@ public class SpringDocConfig {
                                 .in(SecurityScheme.In.HEADER)
 
                                 // 客户端请求时必须带上这个请求头名称
-                                .name(WebConfig.HeaderCheckFilter.REQUIRED_HEADER_NAME))
+                                .name(WebSecurityConfig.HeaderCheckFilter.REQUIRED_HEADER_NAME))
                 )
 
                 // 将上面名称为"RequestHeaderAuth"的SecurityScheme应用到OpenAPI文档中的所有操作中去，

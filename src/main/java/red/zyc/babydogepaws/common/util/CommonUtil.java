@@ -7,9 +7,9 @@ import java.util.Optional;
 /**
  * @author allurx
  */
-public final class Commons {
+public final class CommonUtil {
 
-    private Commons() {
+    private CommonUtil() {
     }
 
     /**

@@ -12,7 +12,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
-import red.zyc.babydogepaws.common.util.Https;
+import red.zyc.babydogepaws.common.util.WebUtil;
 import red.zyc.babydogepaws.model.response.base.Response;
 import red.zyc.babydogepaws.model.response.base.ResponseMessage;
 
@@ -23,7 +23,7 @@ import java.util.List;
  * @author allurx
  */
 @Configuration
-public class WebConfig {
+public class WebSecurityConfig {
 
     @Bean
     public FilterRegistrationBean<HeaderCheckFilter> headerCheckFilterRegistration() {
@@ -60,7 +60,7 @@ public class WebConfig {
             if (!REQUIRED_HEADER_VALUE.equals(headerValue)) {
 
                 // Handle missing header
-                Https.response(response, Response.ok(ResponseMessage.UN_AUTHORIZED));
+                WebUtil.response(response, Response.ok(ResponseMessage.UN_AUTHORIZED));
                 return;
             }
 
@@ -69,7 +69,7 @@ public class WebConfig {
                 chain.doFilter(request, response);
             } catch (Throwable t) {
                 LOGGER.error(t.getMessage(), t);
-                Https.response(response, Response.ok(ResponseMessage.INTERNAL_SERVER_ERROR));
+                WebUtil.response(response, Response.ok(ResponseMessage.INTERNAL_SERVER_ERROR));
             }
         }
 

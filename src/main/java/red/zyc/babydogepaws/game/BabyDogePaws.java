@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.common.constant.Constants;
-import red.zyc.babydogepaws.common.util.Commons;
-import red.zyc.babydogepaws.common.util.Mails;
+import red.zyc.babydogepaws.common.util.CommonUtil;
+import red.zyc.babydogepaws.common.util.MailUtil;
 import red.zyc.babydogepaws.dao.LoginInfoMapper;
 import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsException;
@@ -177,7 +177,7 @@ public class BabyDogePaws {
             // 游戏登录失败3次则取消所有定时任务
             if (currentFailNum == 3) {
                 user.cancelAllTask();
-                Mails.sendTextMail(user.phoneNumber + "游戏登录失败", Commons.convertThrowableToString(t));
+                MailUtil.sendTextMail(user.phoneNumber + "游戏登录失败", CommonUtil.convertThrowableToString(t));
             } else {
 
                 // 通过try with resource语法关闭chrome和webdriver进程可能需要时间

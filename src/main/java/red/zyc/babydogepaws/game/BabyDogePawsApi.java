@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.common.util.ApplicationContextHolder;
-import red.zyc.babydogepaws.common.util.Https;
+import red.zyc.babydogepaws.common.util.WebUtil;
 import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsApiException;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
@@ -93,7 +93,7 @@ public class BabyDogePawsApi {
                     .<Map<String, Object>>thenApplyAsync(response -> {
                         if (response.statusCode() != 200) {
 
-                            LOGGER.warn("[授权失败]-{}:{}:{}", param.user.phoneNumber, param.user.authParam, Https.formatJsonResponse(response, true));
+                            LOGGER.warn("[授权失败]-{}:{}:{}", param.user.phoneNumber, param.user.authParam, WebUtil.formatJsonResponse(response, true));
 
                             // authParam过期了或者不正确，需要重新登录一下
                             if (response.statusCode() == 400) {
@@ -105,8 +105,8 @@ public class BabyDogePawsApi {
                             return new HashMap<>();
 
                         } else {
-                            LOGGER.info("[授权成功]-{}:{}:{}", param.user.phoneNumber, param.user.authParam, Https.formatJsonResponse(response, true));
-                            return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE).map(authData -> {
+                            LOGGER.info("[授权成功]-{}:{}:{}", param.user.phoneNumber, param.user.authParam, WebUtil.formatJsonResponse(response, true));
+                            return WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE).map(authData -> {
 
                                 // 更新游戏数据
                                 param.user.xApiKey = String.valueOf(authData.get("access_token"));
@@ -142,11 +142,11 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(GET_ME.build(param), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[获取用户信息失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[获取用户信息失败]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? getMe(param) : new HashMap<>();
                     } else {
-                        LOGGER.info("[获取用户信息成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, false));
-                        return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE).
+                        LOGGER.info("[获取用户信息成功]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, false));
+                        return WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE).
                                 orElseThrow(() -> new BabyDogePawsApiException("getMe响应结果为空"));
                     }
                 })
@@ -163,11 +163,11 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(PICK_DAILY_BONUS.build(param), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[采集每日奖励失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[采集每日奖励失败]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? pickDailyBonus(param) : new HashMap<>();
                     } else {
-                        LOGGER.info("[采集每日奖励成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        LOGGER.info("[采集每日奖励成功]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
+                        return WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("pickDailyBonus响应结果为空"));
                     }
                 })
@@ -184,11 +184,11 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(GET_DAILY_BONUSES.build(param), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[获取每日奖励内容失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[获取每日奖励内容失败]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? getDailyBonuses(param) : new HashMap<>();
                     } else {
-                        LOGGER.info("[获取每日奖励内容成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        LOGGER.info("[获取每日奖励内容成功]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
+                        return WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("getDailyBonuses响应结果为空"));
                     }
                 })
@@ -205,11 +205,11 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(LIST_CARDS.build(param), HttpResponse.BodyHandlers.ofString())
                 .<List<Map<String, Object>>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[获取卡片列表失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[获取卡片列表失败]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? listCards(param) : new ArrayList<>();
                     } else {
-                        LOGGER.info("[获取卡片列表成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, false));
-                        return Https.parseJsonResponse(response, Constants.LIST_OBJECT_DATA_TYPE)
+                        LOGGER.info("[获取卡片列表成功]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, false));
+                        return WebUtil.parseJsonResponse(response, Constants.LIST_OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("listCards响应结果为空"));
                     }
                 })
@@ -226,11 +226,11 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(UPGRADE_CARD.build(upgradeCard), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[卡片升级失败]-{}:{}:{}:{}:{}", upgradeCard.user.phoneNumber, upgradeCard.balance, upgradeCard.card.cardId, upgradeCard.upgradeInfo.cost, Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[卡片升级失败]-{}:{}:{}:{}:{}", upgradeCard.user.phoneNumber, upgradeCard.balance, upgradeCard.card.cardId, upgradeCard.upgradeInfo.cost, WebUtil.formatJsonResponse(response, true));
                         return authorizeSuccess(upgradeCard, response.statusCode()) ? upgradeCard(upgradeCard) : new HashMap<>();
                     } else {
-                        LOGGER.info("[卡片升级成功]-{}:{}:{}:{}:{}", upgradeCard.user.phoneNumber, upgradeCard.balance, upgradeCard.card.cardId, upgradeCard.upgradeInfo.cost, Https.formatJsonResponse(response, false));
-                        return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        LOGGER.info("[卡片升级成功]-{}:{}:{}:{}:{}", upgradeCard.user.phoneNumber, upgradeCard.balance, upgradeCard.card.cardId, upgradeCard.upgradeInfo.cost, WebUtil.formatJsonResponse(response, false));
+                        return WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("cards响应结果为空"));
                     }
                 })
@@ -247,11 +247,11 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(MINE.build(param), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[挖矿失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[挖矿失败]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? mine(param) : new HashMap<>();
                     } else {
-                        LOGGER.info("[挖矿成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        LOGGER.info("[挖矿成功]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
+                        return WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("mine响应结果为空"));
                     }
                 })
@@ -268,11 +268,11 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(LIST_CHANNEL.build(param), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[获取任务列表失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[获取任务列表失败]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? listChannels(param) : new HashMap<>();
                     } else {
-                        LOGGER.info("[获取任务列表成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        LOGGER.info("[获取任务列表成功]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
+                        return WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("listChannels响应结果为空"));
                     }
                 })
@@ -289,11 +289,11 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(RESOLVE_CHANNEL.build(resolveChannel), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[解决任务失败]-{}:{}:{}", resolveChannel.user.phoneNumber, resolveChannel.channel.id(), Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[解决任务失败]-{}:{}:{}", resolveChannel.user.phoneNumber, resolveChannel.channel.id(), WebUtil.formatJsonResponse(response, true));
                         return authorizeSuccess(resolveChannel, response.statusCode()) ? resolveChannel(resolveChannel) : new HashMap<>();
                     } else {
-                        LOGGER.info("[解决任务成功]-{}:{}:{}", resolveChannel.user.phoneNumber, resolveChannel.channel.id(), Https.formatJsonResponse(response, true));
-                        return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        LOGGER.info("[解决任务成功]-{}:{}:{}", resolveChannel.user.phoneNumber, resolveChannel.channel.id(), WebUtil.formatJsonResponse(response, true));
+                        return WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("resolveChannel响应结果为空"));
                     }
                 })
@@ -310,11 +310,11 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(PICK_CHANNEL.build(resolveChannel), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[采集任务失败]-{}:{}:{}", resolveChannel.user.phoneNumber, resolveChannel.channel.id(), Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[采集任务失败]-{}:{}:{}", resolveChannel.user.phoneNumber, resolveChannel.channel.id(), WebUtil.formatJsonResponse(response, true));
                         return authorizeSuccess(resolveChannel, response.statusCode()) ? pickChannel(resolveChannel) : new HashMap<>();
                     } else {
-                        LOGGER.info("[采集任务成功]-{}:{}:{}", resolveChannel.user.phoneNumber, resolveChannel.channel.id(), Https.formatJsonResponse(response, true));
-                        return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        LOGGER.info("[采集任务成功]-{}:{}:{}", resolveChannel.user.phoneNumber, resolveChannel.channel.id(), WebUtil.formatJsonResponse(response, true));
+                        return WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("pickChannel响应结果为空"));
                     }
                 })
@@ -331,11 +331,11 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(PICK_PROMO.build(param), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[参与促销失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[参与促销失败]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? pickPromo(param) : new HashMap<>();
                     } else {
-                        LOGGER.info("[参与促销成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        LOGGER.info("[参与促销成功]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
+                        return WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("pickPromo响应结果为空"));
                     }
                 })
@@ -352,11 +352,11 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(GET_PROMO.build(param), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[获取促销信息失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[获取促销信息失败]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? getPromo(param) : new HashMap<>();
                     } else {
-                        LOGGER.info("[获取促销信息成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        LOGGER.info("[获取促销信息成功]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
+                        return WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("getPromo响应结果为空"));
                     }
                 })
@@ -373,11 +373,11 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(LIST_FRIENDS.build(param), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[获取好友列表失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[获取好友列表失败]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? listFriends(param) : new HashMap<>();
                     } else {
-                        LOGGER.info("[获取好友列表成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, false));
-                        return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        LOGGER.info("[获取好友列表成功]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, false));
+                        return WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("listFriends响应结果为空"));
                     }
                 })
@@ -394,11 +394,11 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(GET_BOOSTS.build(param), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[获取激励信息失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[获取激励信息失败]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? getBoosts(param) : new HashMap<>();
                     } else {
-                        LOGGER.info("[获取激励信息成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        LOGGER.info("[获取激励信息成功]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
+                        return WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("boosts响应结果为空"));
                     }
                 })
@@ -415,11 +415,11 @@ public class BabyDogePawsApi {
         return CLIENT.sendAsync(USE_FULL_ENERGY_BOOSTS.build(param), HttpResponse.BodyHandlers.ofString())
                 .<Map<String, Object>>thenApplyAsync(response -> {
                     if (response.statusCode() != 200) {
-                        LOGGER.warn("[使用全能量激励失败]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
+                        LOGGER.warn("[使用全能量激励失败]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
                         return authorizeSuccess(param, response.statusCode()) ? useFullEnergyBoosts(param) : new HashMap<>();
                     } else {
-                        LOGGER.info("[使用全能量激励成功]-{}:{}", param.user.phoneNumber, Https.formatJsonResponse(response, true));
-                        return Https.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
+                        LOGGER.info("[使用全能量激励成功]-{}:{}", param.user.phoneNumber, WebUtil.formatJsonResponse(response, true));
+                        return WebUtil.parseJsonResponse(response, Constants.OBJECT_DATA_TYPE)
                                 .orElseThrow(() -> new BabyDogePawsApiException("boosts响应结果为空"));
                     }
                 })
