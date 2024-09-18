@@ -79,7 +79,7 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     private void scheduleAuthorize(BabyDogePawsGameRequestParam param) {
-        param.user.tasks.put("Authorize", AUTHENTICATOR.scheduleAtFixedRate(() -> {
+        param.user.tasks.put("Authorize", AUTHENTICATOR.scheduleWithFixedDelay(() -> {
             try {
                 babyDogePawsApi.authorize(param);
             } catch (Throwable t) {
@@ -94,7 +94,7 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     private void schedulePickDailyBonus(BabyDogePawsGameRequestParam param) {
-        param.user.tasks.put("PickDailyBonus", ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
+        param.user.tasks.put("PickDailyBonus", ONE_TIME_TASK_HITTER.scheduleWithFixedDelay(() -> {
             try {
                 babyDogePawsApi.pickDailyBonus(param);
             } catch (Throwable t) {
@@ -109,7 +109,7 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     private void schedulePickPromo(BabyDogePawsGameRequestParam param) {
-        param.user.tasks.put("PickPromo", ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
+        param.user.tasks.put("PickPromo", ONE_TIME_TASK_HITTER.scheduleWithFixedDelay(() -> {
             try {
                 babyDogePawsApi.pickPromo(param);
             } catch (Throwable t) {
@@ -189,7 +189,7 @@ public class BabyDogePawsTask {
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     private void scheduleUpgradeCard(BabyDogePawsGameRequestParam param) {
-        param.user.tasks.put("UpgradeCard", CARD_UP_GRADER.scheduleAtFixedRate(() -> {
+        param.user.tasks.put("UpgradeCard", CARD_UP_GRADER.scheduleWithFixedDelay(() -> {
             try {
                 var balance = new BigDecimal(babyDogePawsApi.getMe(param).getOrDefault("balance", BigDecimal.ZERO).toString());
                 var cards = babyDogePawsApi.listCards(param);
@@ -201,13 +201,12 @@ public class BabyDogePawsTask {
     }
 
     /**
-     * todo 解决完任务后需要领取任务奖励
-     * 定时解决任务
+     * 定时解决并领取任务奖励
      *
      * @param param {@link BabyDogePawsGameRequestParam}
      */
     private void scheduleResolveChannel(BabyDogePawsGameRequestParam param) {
-        ONE_TIME_TASK_HITTER.scheduleAtFixedRate(() -> {
+        ONE_TIME_TASK_HITTER.scheduleWithFixedDelay(() -> {
             try {
                 @SuppressWarnings("unchecked")
                 var channels = ((List<Map<String, Object>>) babyDogePawsApi.listChannels(param).getOrDefault("channels", new ArrayList<>()))
