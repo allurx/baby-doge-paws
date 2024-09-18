@@ -137,6 +137,7 @@ public class BabyDogePawsTask {
                 // 挖矿请求
                 count = ThreadLocalRandom.current().nextInt(mineCountMin, mineCountMax);
                 var miningInfo = babyDogePawsApi.mine(new Mine(param.user, count));
+                if (miningInfo.isEmpty()) break;
 
                 // 挖矿请求返回的用户信息
                 @SuppressWarnings("unchecked")

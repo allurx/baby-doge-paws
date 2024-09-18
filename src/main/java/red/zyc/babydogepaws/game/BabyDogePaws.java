@@ -1,5 +1,6 @@
 package red.zyc.babydogepaws.game;
 
+import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
@@ -13,6 +14,7 @@ import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.common.util.CommonUtil;
 import red.zyc.babydogepaws.common.util.MailUtil;
 import red.zyc.babydogepaws.dao.LoginInfoMapper;
+import red.zyc.babydogepaws.dao.TelegramUserMapper;
 import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsException;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
@@ -47,16 +49,19 @@ public class BabyDogePaws {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePaws.class);
     private static final String BABY_DOGE_PAWS_URL = "https://web.telegram.org/a/#7413313712";
+    private static final String TELEGRAM_URL = "https://web.telegram.org/a/";
 
     private final Environment environment;
+    private final TelegramUserMapper telegramUserMapper;
     private final UserMapper userMapper;
     private final LoginInfoMapper loginInfoMapper;
     private final BabyDogePawsTask babyDogePawsTask;
 
-    public BabyDogePaws(Environment environment, UserMapper userMapper,
+    public BabyDogePaws(Environment environment, TelegramUserMapper telegramUserMapper, UserMapper userMapper,
                         LoginInfoMapper loginInfoMapper,
                         BabyDogePawsTask babyDogePawsTask) {
         this.environment = environment;
+        this.telegramUserMapper = telegramUserMapper;
         this.userMapper = userMapper;
         this.loginInfoMapper = loginInfoMapper;
         this.babyDogePawsTask = babyDogePawsTask;
@@ -177,7 +182,12 @@ public class BabyDogePaws {
             // 游戏登录失败3次则取消所有定时任务
             if (currentFailNum == 3) {
                 user.cancelAllTask();
-                MailUtil.sendTextMail(user.phoneNumber + "游戏登录失败", CommonUtil.convertThrowableToString(t));
+                if (isTelegramBanned(user)) {
+                    telegramUserMapper.updateTelegramUserBanned(user.id, 1);
+                    MailUtil.sendTextMail(user.phoneNumber + "telegram被ban了", "");
+                } else {
+                    MailUtil.sendTextMail(user.phoneNumber + "游戏登录失败", CommonUtil.convertThrowableToString(t));
+                }
             } else {
 
                 // 通过try with resource语法关闭chrome和webdriver进程可能需要时间
@@ -189,5 +199,43 @@ public class BabyDogePaws {
             }
         }
     }
+
+
+    private boolean isTelegramBanned(BabyDogePawsUser user) {
+        try (var chrome = Chrome.builder()
+                .mode(Mode.ATTACH)
+                .addArgs("--user-data-dir=%s".formatted(user.chromeDataDir()), "--headless=new")
+                .build()) {
+
+            var webDriver = chrome.webDriver();
+            var jsExecutor = (JavascriptExecutor) webDriver;
+
+            // 加载telegram页面
+            webDriver.get(TELEGRAM_URL);
+
+            // 判断当前手机号是不是被ban了
+            return Poller.<JavascriptExecutor, Boolean>builder()
+                    .timing(Duration.ofSeconds(60), Duration.ofSeconds(1))
+                    .<CallableFunction<JavascriptExecutor, Boolean>>execute(jsExecutor, o -> Optional.ofNullable(SeleniumSupport.<WebElement>executeScript(o, "return Array.from(document.querySelectorAll(\"button\")).find(button => button.textContent.includes(\"Log in by phone Number\"))"))
+                            .map(element -> {
+                                element.click();
+                                LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(3));
+                                var phoneNumberInput = webDriver.findElement(By.id("sign-in-phone-number"));
+                                phoneNumberInput.clear();
+                                phoneNumberInput.sendKeys(user.areaCode + user.phoneNumber);
+                                var submitButton = webDriver.findElement(By.cssSelector("button[type=\"submit\"]"));
+                                submitButton.click();
+                                LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(3));
+                                return ExpectedConditions.textToBePresentInElementLocated(By.cssSelector("label[for=\"sign-in-phone-number\"]"), "This phone number is banned.").apply((WebDriver) jsExecutor);
+                            }).orElse(false))
+                    .until(b -> b)
+                    .onTimeout(() -> LOGGER.warn("[无法确定游戏登录失败的原因]-{}", user.phoneNumber))
+                    .ignoreExceptions(Throwable.class)
+                    .build()
+                    .poll()
+                    .orElse(false);
+        }
+    }
+
 
 }
