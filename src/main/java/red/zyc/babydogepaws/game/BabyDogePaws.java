@@ -103,7 +103,7 @@ public class BabyDogePaws {
                     .until(r -> r)
                     .onTimeout(throwingRunnable(() -> new BabyDogePawsException("telegram页面加载失败")))
                     .build()
-                    .poll();
+                    .get();
 
             // 点击play按钮
             Poller.<WebDriver, Boolean>builder()
@@ -117,7 +117,7 @@ public class BabyDogePaws {
                     .onTimeout(throwingRunnable(() -> new BabyDogePawsException("找不到play按钮")))
                     .ignoreExceptions(Throwable.class)
                     .build()
-                    .poll();
+                    .get();
 
             // 第一次play会出现一个confirm按钮
             Poller.<JavascriptExecutor, Boolean>builder()
@@ -130,7 +130,7 @@ public class BabyDogePaws {
                     .until(b -> b)
                     .ignoreExceptions(Throwable.class)
                     .build()
-                    .poll();
+                    .get();
 
             // 1、定位游戏iframe，定位成功后webdriver就会切换到这个iframe中
             Poller.<WebDriver, WebDriver>builder()
@@ -140,7 +140,7 @@ public class BabyDogePaws {
                     .ignoreExceptions(NoSuchElementException.class)
                     .onTimeout(throwingRunnable(() -> new BabyDogePawsException("定位游戏iframe失败")))
                     .build()
-                    .poll();
+                    .get();
 
             // 2、修改sessionStorage模拟手机登录
             String key1 = "telegram-apps/launch-params";
@@ -150,7 +150,7 @@ public class BabyDogePaws {
                     .<CallableFunction<JavascriptExecutor, List<String>>>execute(jsExecutor, o -> executeScript(jsExecutor, RETURN_TELEGRAM_APPS_SESSION_STORAGE_ITEMS, key1, key2))
                     .until(o -> o != null && o.size() == 2 && o.getFirst() != null && o.get(1) != null)
                     .build()
-                    .poll()
+                    .getOptional()
                     .orElseThrow(() -> new BabyDogePawsException("获取sessionStorage失败"));
 
             String mockPhoneLaunchParams = items.getFirst().replaceFirst("tgWebAppPlatform=weba", "tgWebAppPlatform=ios");
@@ -164,7 +164,7 @@ public class BabyDogePaws {
                     .until(Objects::nonNull)
                     .onTimeout(throwingRunnable(() -> new BabyDogePawsException("模拟手机登录失败")))
                     .build()
-                    .poll();
+                    .get();
 
             // 其它线程执行任务时就能感知到最新的authParam了
             user.authParam = (String) JACKSON_OPERATOR.fromJsonString(items.get(1), Constants.OBJECT_DATA_TYPE).get("initDataRaw");
@@ -232,8 +232,7 @@ public class BabyDogePaws {
                     .onTimeout(() -> LOGGER.warn("[无法确定游戏登录失败的原因]-{}", user.phoneNumber))
                     .ignoreExceptions(Throwable.class)
                     .build()
-                    .poll()
-                    .orElse(false);
+                    .get();
         }
     }
 
