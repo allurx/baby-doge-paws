@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
@@ -53,6 +54,15 @@ public class TODO {
     }
 
     public static void main(String[] args) throws Exception {
+
+        CompletableFuture.supplyAsync(() -> 1)
+                .thenApply(i -> ++i)
+                .thenApply(i -> {
+                    System.out.println(i);
+                    return i;
+                })
+                .thenRun(() -> System.out.println(1))
+                .thenRun(() -> System.out.println(2));
     }
 
     @SuppressWarnings("unchecked")

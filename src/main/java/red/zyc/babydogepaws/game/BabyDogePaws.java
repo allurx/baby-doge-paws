@@ -28,7 +28,9 @@ import red.zyc.kit.selenium.Mode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -132,7 +134,7 @@ public class BabyDogePaws {
                     .build()
                     .get();
 
-            // 1、定位游戏iframe，定位成功后webdriver就会切换到这个iframe中
+            // 定位游戏iframe，定位成功后webdriver就会切换到这个iframe中
             Poller.<WebDriver, WebDriver>builder()
                     .timing(Duration.ofSeconds(60), Duration.ofMillis(1000))
                     .<CallableFunction<WebDriver, WebDriver>>execute(webDriver, o -> ExpectedConditions.frameToBeAvailableAndSwitchToIt(BABY_DAGE_PAWS_WEB_APP).apply(o))
@@ -142,7 +144,7 @@ public class BabyDogePaws {
                     .build()
                     .get();
 
-            // 2、修改sessionStorage模拟手机登录
+            // 修改sessionStorage模拟手机登录
             String key1 = "telegram-apps/launch-params";
             String key2 = "telegram-apps/mini-app";
             var items = Poller.<JavascriptExecutor, List<String>>builder()
@@ -153,10 +155,22 @@ public class BabyDogePaws {
                     .getOptional()
                     .orElseThrow(() -> new BabyDogePawsException("获取sessionStorage失败"));
 
-            String mockPhoneLaunchParams = items.getFirst().replaceFirst("tgWebAppPlatform=weba", "tgWebAppPlatform=ios");
+            var mockPhoneLaunchParams = items.getFirst().replaceFirst("tgWebAppPlatform=weba", "tgWebAppPlatform=ios");
             jsExecutor.executeScript(SET_TELEGRAM_APPS_SESSION_STORAGE_ITEM, key1, mockPhoneLaunchParams);
 
-            // 3、重新加载iframe使其能够在web端显示（reload后webdriver依旧在iframe中）
+            // 保存tg用户信息
+            @SuppressWarnings("unchecked")
+            var initData = (Map<String, Object>) JACKSON_OPERATOR.<Map<String, Object>>fromJsonString(items.get(1), Map.class)
+                    .getOrDefault("initData", new HashMap<>());
+            @SuppressWarnings("unchecked")
+            var tgUser = (Map<String, Object>) initData.getOrDefault("user", new HashMap<>());
+            telegramUserMapper.saveOrUpdateTelegramUser(
+                    user.id,
+                    Long.parseLong(tgUser.getOrDefault("id", -1).toString()),
+                    String.valueOf(tgUser.getOrDefault("username", ""))
+            );
+
+            // 重新加载iframe使其能够在web端显示（reload后webdriver依旧在iframe中）
             jsExecutor.executeScript(RELOAD_PAGE);
             Poller.<JavascriptExecutor, WebElement>builder()
                     .timing(Duration.ofSeconds(30), Duration.ofMillis(1000))

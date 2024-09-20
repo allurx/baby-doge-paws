@@ -26,4 +26,12 @@ public interface TelegramUserMapper {
             update telegram_user set banned=#{banned} where id=#{id}
             """)
     int updateTelegramUserBanned(Integer id, int banned);
+
+    @Update("""
+            update telegram_user set
+                         telegram_user_id=#{telegramUserId}, 
+                         username=#{username}
+                  where id=#{id}
+                        """)
+    int saveOrUpdateTelegramUser(Integer id, Long telegramUserId, String username);
 }
