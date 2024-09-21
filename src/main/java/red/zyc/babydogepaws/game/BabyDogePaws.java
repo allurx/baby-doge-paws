@@ -181,7 +181,7 @@ public class BabyDogePaws {
                     .get();
 
             // 其它线程执行任务时就能感知到最新的authParam了
-            user.authParam = (String) JACKSON_OPERATOR.fromJsonString(items.get(1), Constants.OBJECT_DATA_TYPE).get("initDataRaw");
+            user.authParam = JACKSON_OPERATOR.fromJsonString(items.get(1), Constants.OBJECT_DATA_TYPE).get("initDataRaw") +"&referrer=";
 
             // 保存或更新登录信息
             loginInfoMapper.saveOrUpdateLoginInfo(user.id, LocalDateTime.now(), user.authParam);
