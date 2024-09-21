@@ -25,7 +25,7 @@ public final class BabyDogePawsApiRequest {
         AUTHORIZE {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/authorize"))
                         .header("Content-Type", "application/x-www-form-urlencoded")
                         .POST(HttpRequest.BodyPublishers.ofString(Optional.ofNullable(param.user.authParam).orElse("")))
@@ -36,7 +36,7 @@ public final class BabyDogePawsApiRequest {
         GET_ME {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/getMe"))
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
                         .GET()
@@ -47,7 +47,7 @@ public final class BabyDogePawsApiRequest {
         PICK_DAILY_BONUS {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/pickDailyBonus"))
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
                         .POST(HttpRequest.BodyPublishers.ofString(""))
@@ -58,7 +58,7 @@ public final class BabyDogePawsApiRequest {
         GET_DAILY_BONUSES {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/getDailyBonuses"))
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
                         .GET()
@@ -69,7 +69,7 @@ public final class BabyDogePawsApiRequest {
         LIST_CARDS {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/cards"))
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
                         .GET()
@@ -81,7 +81,7 @@ public final class BabyDogePawsApiRequest {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
                 UpgradeCard upgradeCard = (UpgradeCard) param;
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/cards"))
                         .header("content-type", "application/json")
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
@@ -94,7 +94,7 @@ public final class BabyDogePawsApiRequest {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
                 Mine mine = (Mine) param;
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/mine"))
                         .header("content-type", "application/json")
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
@@ -106,7 +106,7 @@ public final class BabyDogePawsApiRequest {
         LIST_CHANNEL {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/channels"))
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
                         .GET()
@@ -118,7 +118,7 @@ public final class BabyDogePawsApiRequest {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
                 ResolveChannel resolveChannel = (ResolveChannel) param;
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/channels-resolve"))
                         .header("content-type", "application/json")
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
@@ -131,7 +131,7 @@ public final class BabyDogePawsApiRequest {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
                 ResolveChannel resolveChannel = (ResolveChannel) param;
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/channels"))
                         .header("content-type", "application/json")
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
@@ -143,7 +143,7 @@ public final class BabyDogePawsApiRequest {
         PICK_PROMO {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/promo"))
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
                         .POST(HttpRequest.BodyPublishers.ofString(""))
@@ -154,7 +154,7 @@ public final class BabyDogePawsApiRequest {
         GET_PROMO {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/promo"))
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
                         .GET()
@@ -165,7 +165,7 @@ public final class BabyDogePawsApiRequest {
         LIST_FRIENDS {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/friends"))
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
                         .GET()
@@ -176,7 +176,7 @@ public final class BabyDogePawsApiRequest {
         GET_BOOSTS {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/boosts"))
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
                         .GET()
@@ -187,7 +187,7 @@ public final class BabyDogePawsApiRequest {
         USE_FULL_ENERGY_BOOSTS {
             @Override
             public HttpRequest build(BabyDogePawsGameRequestParam param) {
-                return HttpRequest.newBuilder()
+                return builder()
                         .uri(URI.create("https://backend.babydogepawsbot.com/boosts"))
                         .header("content-type", "application/json")
                         .header(X_API_KEY, Optional.ofNullable(param.user.xApiKey).orElse(""))
@@ -200,6 +200,19 @@ public final class BabyDogePawsApiRequest {
         private static final String X_API_KEY = "x-api-key";
 
         public abstract HttpRequest build(BabyDogePawsGameRequestParam param);
+
+        public HttpRequest.Builder builder() {
+            return HttpRequest.newBuilder()
+                    .header("Accept", "application/json, text/plain, */*")
+                    .header("sec-fetch-site", "cross-site")
+                    .header("Accept-Language", "en-US,en;q=0.9")
+                    .header("Accept-Encoding", "gzip, deflate, br")
+                    .header("sec-fetch-mode", "cors")
+                    .header("Origin", "https://babydogeclikerbot.com")
+                    .header("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 17_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148")
+                    .header("Referer", "https://babydogeclikerbot.com/")
+                    .header("sec-fetch-dest", "empty");
+        }
 
     }
 }
