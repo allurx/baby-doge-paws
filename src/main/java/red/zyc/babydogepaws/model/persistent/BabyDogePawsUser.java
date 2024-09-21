@@ -2,6 +2,7 @@ package red.zyc.babydogepaws.model.persistent;
 
 import red.zyc.babydogepaws.common.util.ApplicationContextHolder;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
@@ -21,6 +22,9 @@ public class BabyDogePawsUser {
     public Integer emailReset;
     public String inviteLink;
     public String friendNum;
+
+    public BigDecimal maximumCardUpgradePrice;
+    public String userAgent;
 
     public volatile String xApiKey;
     public volatile String authParam;

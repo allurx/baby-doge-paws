@@ -24,11 +24,14 @@ public interface UserMapper {
             	b.invite_link,
             	b.x_api_key,
             	b.friend_num,
-            	c.auth_param
+            	c.auth_param,
+	            d.maximum_card_upgrade_price,
+                d.user_agent
             FROM
             	telegram_user a
             	LEFT JOIN user b ON a.id = b.user_id
             	LEFT JOIN login_info c ON a.id = c.user_id
+                left join user_config d on a.id=d.user_id
             WHERE
             	a.banned = 0
             ORDER BY
@@ -49,11 +52,14 @@ public interface UserMapper {
             	b.invite_link,
             	b.x_api_key,
             	b.friend_num,
-            	c.auth_param
+            	c.auth_param,
+		        d.maximum_card_upgrade_price,
+                d.user_agent
             FROM
             	telegram_user a
             	LEFT JOIN user b ON a.id = b.user_id
             	LEFT JOIN login_info c ON a.id = c.user_id
+                left join user_config d on a.id=d.user_id
             WHERE
             	a.banned = 0
                 and a.phone_number = #{phoneNumber}

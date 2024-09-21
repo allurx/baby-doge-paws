@@ -6,10 +6,8 @@ import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.config.BabyDogePawsProperties;
 import red.zyc.babydogepaws.dao.CardMapper;
 import red.zyc.babydogepaws.dao.MiningInfoMapper;
-import red.zyc.babydogepaws.dao.UserConfigMapper;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.persistent.Card;
-import red.zyc.babydogepaws.model.persistent.UserConfig;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.model.request.Mine;
 import red.zyc.babydogepaws.model.request.ResolveChannel;
@@ -47,15 +45,13 @@ public class BabyDogePawsTask {
     private final BabyDogePawsApi babyDogePawsApi;
     private final CardMapper cardMapper;
     private final MiningInfoMapper miningInfoMapper;
-    private final UserConfigMapper userConfigMapper;
     private final BabyDogePawsProperties babyDogePawsProperties;
 
 
-    public BabyDogePawsTask(BabyDogePawsApi babyDogePawsApi, CardMapper cardMapper, MiningInfoMapper miningInfoMapper, UserConfigMapper userConfigMapper, BabyDogePawsProperties babyDogePawsProperties) {
+    public BabyDogePawsTask(BabyDogePawsApi babyDogePawsApi, CardMapper cardMapper, MiningInfoMapper miningInfoMapper, BabyDogePawsProperties babyDogePawsProperties) {
         this.babyDogePawsApi = babyDogePawsApi;
         this.cardMapper = cardMapper;
         this.miningInfoMapper = miningInfoMapper;
-        this.userConfigMapper = userConfigMapper;
         this.babyDogePawsProperties = babyDogePawsProperties;
     }
 
@@ -266,7 +262,7 @@ public class BabyDogePawsTask {
                 .min(Comparator.<UpgradeCard, BigDecimal>comparing(upgradeCard -> upgradeCard.upgradeInfo.cost.divide(upgradeCard.upgradeInfo.profit, 2, RoundingMode.HALF_UP))
                         .thenComparing(upgradeCard -> upgradeCard.upgradeInfo.cost))
                 .ifPresent(upgradeCard -> {
-                    if (canUpgradeCard(upgradeCard, Optional.ofNullable(userConfigMapper.getUserConfig(user.id)).map(UserConfig::maximumCardUpgradePrice).orElse(BigDecimal.valueOf(500)))) {
+                    if (canUpgradeCard(upgradeCard, Optional.ofNullable(user.maximumCardUpgradePrice).orElse(BigDecimal.valueOf(500)))) {
                         var map = babyDogePawsApi.upgradeCard(upgradeCard);
                         var latestBalance = new BigDecimal(map.getOrDefault("balance", BigDecimal.ZERO).toString());
                         var latestCards = (List<Map<String, Object>>) map.getOrDefault("cards", new ArrayList<>());

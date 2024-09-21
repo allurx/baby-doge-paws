@@ -16,6 +16,7 @@
 package red.zyc.babydogepaws.dao;
 
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 import red.zyc.babydogepaws.model.persistent.UserConfig;
 
 /**
@@ -27,4 +28,9 @@ public interface UserConfigMapper {
             select * from user_config where user_id=#{userId}
             """)
     UserConfig getUserConfig(Integer userId);
+
+    @Update("""
+            update user_config set user_agent = #{userAgent} where user_id=#{userId}
+            """)
+    int updateUserAgent(Integer userId, String userAgent);
 }

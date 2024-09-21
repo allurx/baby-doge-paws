@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 public record UserConfig(Integer id,
                          Integer userId,
                          BigDecimal maximumCardUpgradePrice,
+                         String userAgent,
                          LocalDateTime createdTime,
                          LocalDateTime modifiedTime) {
 }

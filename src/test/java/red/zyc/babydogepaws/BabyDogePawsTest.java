@@ -10,6 +10,8 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.RequestEntity;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.common.util.WebUtil;
+import red.zyc.babydogepaws.dao.UserConfigMapper;
+import red.zyc.babydogepaws.dao.UserMapper;
 import red.zyc.babydogepaws.exception.BabyDogePawsApiException;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 
@@ -20,11 +22,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
@@ -43,6 +47,40 @@ public class BabyDogePawsTest {
 
     @Autowired
     private TestRestTemplate testRestTemplate;
+    @Autowired
+    private UserConfigMapper userConfigMapper;
+    @Autowired
+    private UserMapper userMapper;
+
+
+    void userAgent() throws Exception{
+        Path inputPath = Paths.get("C:\\Users\\zyc\\Downloads\\user-agents_safari_iphone_mobile-phone_ios_webkit.txt");
+        Path outputPath = Paths.get("C:\\Users\\zyc\\Desktop\\user-agents.txt");
+        Pattern pattern=Pattern.compile("^Mozilla/5\\.0 \\(iPhone; CPU iPhone OS (1[0-7]|10|11|12|13|14|15|16|17)(_\\d+)? like Mac OS X\\) AppleWebKit/(605\\.1\\.15|605\\.1\\.12|604\\.3\\.5|601\\.1\\.46) \\(KHTML, like Gecko\\) Version\\/(17\\.3|17\\.0|16\\.5|16\\.0|15\\.5|15\\.0|14\\.0|13\\.0|12\\.0|11\\.0|10\\.0) Mobile/\\w+ Safari/(605\\.1\\.15|605\\.1\\.12|604\\.1|601\\.1)$");
+        var list = Files.lines(inputPath)
+                .parallel()
+                .filter(s -> pattern.matcher(s).find())
+                .toList();
+        Files.write(outputPath,list);
+    }
+    @Test
+    void updateUserAgent() throws Exception {
+        var userAgents = Files.lines(Paths.get("C:\\Users\\zyc\\Desktop\\user-agents.txt")).toList();
+        userMapper.listBabyDogeUsers().parallelStream().forEach(user -> {
+            if(user.id!=1 && user.id!=2 && user.id!=9){
+                int index = Math.abs(user.id.hashCode()) % userAgents.size();
+                userConfigMapper.updateUserAgent(user.id,userAgents.get(index)
+                        .replaceAll(" Version/\\d+\\.\\d+", "")
+                        .replaceAll(" Safari/\\d+\\.\\d+", "")
+                        .trim()
+                );
+            }else {
+                userConfigMapper.updateUserAgent(user.id,"Mozilla/5.0 (iPhone; CPU iPhone OS 17_6_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148");
+            }
+        });
+    }
+
+
 
     @Test
     void getUser() {
@@ -178,12 +216,8 @@ public class BabyDogePawsTest {
     }
 
     public static void main(String[] args) throws Exception {
-        String key = "d0275d3ab943ee7f9ef1bd0957973b75357acc621cea2057ec59be1cdb777886";
-        getMe(key);
-        mine(key);
-        pickDailyBonus(key);
-        upgradeCard(key, 17);
-        getMe(key);
+
+
 
     }
 
