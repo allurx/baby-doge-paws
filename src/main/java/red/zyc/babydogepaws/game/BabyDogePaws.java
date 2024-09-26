@@ -20,8 +20,7 @@ import red.zyc.babydogepaws.exception.BabyDogePawsException;
 import red.zyc.babydogepaws.model.persistent.BabyDogePawsUser;
 import red.zyc.babydogepaws.model.request.BabyDogePawsGameRequestParam;
 import red.zyc.babydogepaws.selenium.SeleniumSupport;
-import red.zyc.kit.base.concurrency.CallableFunction;
-import red.zyc.kit.base.concurrency.Poller;
+import red.zyc.kit.base.concurrency.IntervalBasedPoller;
 import red.zyc.kit.selenium.Chrome;
 import red.zyc.kit.selenium.Mode;
 
@@ -39,8 +38,7 @@ import java.util.concurrent.locks.LockSupport;
 import static red.zyc.babydogepaws.selenium.ElementPosition.BABY_DAGE_PAWS_PLAY_BUTTON;
 import static red.zyc.babydogepaws.selenium.ElementPosition.BABY_DAGE_PAWS_WEB_APP;
 import static red.zyc.babydogepaws.selenium.Javascript.*;
-import static red.zyc.babydogepaws.selenium.SeleniumSupport.executeScript;
-import static red.zyc.kit.base.concurrency.Poller.throwingRunnable;
+import static red.zyc.kit.base.ConditionalFlow.when;
 import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
 /**
@@ -99,60 +97,64 @@ public class BabyDogePaws {
             webDriver.get(BABY_DOGE_PAWS_URL);
 
             // 等待页面加载完毕
-            Poller.<JavascriptExecutor, Boolean>builder()
+            when(!IntervalBasedPoller.builder()
                     .timing(Duration.ofSeconds(60), Duration.ofSeconds(1))
-                    .<CallableFunction<JavascriptExecutor, Boolean>>execute(jsExecutor, o -> executeScript(o, RETURN_TELEGRAM_LOGIN_SUCCESS))
-                    .until(r -> r)
-                    .onTimeout(throwingRunnable(() -> new BabyDogePawsException("telegram页面加载失败")))
                     .build()
-                    .get();
+                    .poll(() -> jsExecutor,
+                            e -> SeleniumSupport.<Boolean>executeScript(e, RETURN_TELEGRAM_LOGIN_SUCCESS),
+                            r -> r)
+                    .get())
+                    .throwIt(() -> new BabyDogePawsException("telegram页面加载失败"));
 
             // 点击play按钮
-            Poller.<WebDriver, Boolean>builder()
+            when(!IntervalBasedPoller.builder()
                     .timing(Duration.ofSeconds(30), Duration.ofMillis(500))
-                    .<CallableFunction<WebDriver, Boolean>>execute(webDriver, o -> Optional.ofNullable(ExpectedConditions.elementToBeClickable(BABY_DAGE_PAWS_PLAY_BUTTON).apply(o))
-                            .map(element -> {
-                                element.click();
-                                return true;
-                            }).orElse(false))
-                    .until(b -> b)
-                    .onTimeout(throwingRunnable(() -> new BabyDogePawsException("找不到play按钮")))
                     .ignoreExceptions(Throwable.class)
                     .build()
-                    .get();
+                    .poll(() -> webDriver,
+                            o -> Optional.ofNullable(ExpectedConditions.elementToBeClickable(BABY_DAGE_PAWS_PLAY_BUTTON).apply(o))
+                                    .map(element -> {
+                                        element.click();
+                                        return true;
+                                    }).orElse(false),
+                            r -> r)
+                    .get())
+                    .throwIt(() -> new BabyDogePawsException("找不到play按钮"));
 
             // 第一次play会出现一个confirm按钮
-            Poller.<JavascriptExecutor, Boolean>builder()
+            IntervalBasedPoller.builder()
                     .timing(Duration.ofSeconds(10), Duration.ofMillis(1000))
-                    .<CallableFunction<JavascriptExecutor, Boolean>>execute(jsExecutor, o -> Optional.ofNullable(SeleniumSupport.<WebElement>executeScript(o, RETURN_BABY_DAGE_PAWS_WEB_APP_CONFIRM_BUTTON))
-                            .map(element -> {
-                                element.click();
-                                return true;
-                            }).orElse(false))
-                    .until(b -> b)
                     .ignoreExceptions(Throwable.class)
                     .build()
-                    .get();
+                    .poll(() -> jsExecutor,
+                            o -> Optional.ofNullable(SeleniumSupport.<WebElement>executeScript(o, RETURN_BABY_DAGE_PAWS_WEB_APP_CONFIRM_BUTTON))
+                                    .map(element -> {
+                                        element.click();
+                                        return true;
+                                    }).orElse(false),
+                            r -> r);
 
             // 定位游戏iframe，定位成功后webdriver就会切换到这个iframe中
-            Poller.<WebDriver, WebDriver>builder()
+            IntervalBasedPoller.builder()
                     .timing(Duration.ofSeconds(60), Duration.ofMillis(1000))
-                    .<CallableFunction<WebDriver, WebDriver>>execute(webDriver, o -> ExpectedConditions.frameToBeAvailableAndSwitchToIt(BABY_DAGE_PAWS_WEB_APP).apply(o))
-                    .until(Objects::nonNull)
                     .ignoreExceptions(NoSuchElementException.class)
-                    .onTimeout(throwingRunnable(() -> new BabyDogePawsException("定位游戏iframe失败")))
                     .build()
-                    .get();
+                    .poll(() -> webDriver,
+                            o -> ExpectedConditions.frameToBeAvailableAndSwitchToIt(BABY_DAGE_PAWS_WEB_APP).apply(o),
+                            Objects::nonNull)
+                    .getAsOptional()
+                    .orElseThrow(() -> new BabyDogePawsException("定位游戏iframe失败"));
 
             // 修改sessionStorage模拟手机登录
             String key1 = "telegram-apps/launch-params";
             String key2 = "telegram-apps/mini-app";
-            var items = Poller.<JavascriptExecutor, List<String>>builder()
+            var items = IntervalBasedPoller.builder()
                     .timing(Duration.ofSeconds(30), Duration.ofMillis(1000))
-                    .<CallableFunction<JavascriptExecutor, List<String>>>execute(jsExecutor, o -> executeScript(jsExecutor, RETURN_TELEGRAM_APPS_SESSION_STORAGE_ITEMS, key1, key2))
-                    .until(o -> o != null && o.size() == 2 && o.getFirst() != null && o.get(1) != null)
                     .build()
-                    .getOptional()
+                    .poll(() -> jsExecutor,
+                            o -> SeleniumSupport.<List<String>>executeScript(jsExecutor, RETURN_TELEGRAM_APPS_SESSION_STORAGE_ITEMS, key1, key2),
+                            o -> o != null && o.size() == 2 && o.getFirst() != null && o.get(1) != null)
+                    .getAsOptional()
                     .orElseThrow(() -> new BabyDogePawsException("获取sessionStorage失败"));
 
             var mockPhoneLaunchParams = items.getFirst().replaceFirst("tgWebAppPlatform=weba", "tgWebAppPlatform=ios");
@@ -172,16 +174,16 @@ public class BabyDogePaws {
 
             // 重新加载iframe使其能够在web端显示（reload后webdriver依旧在iframe中）
             jsExecutor.executeScript(RELOAD_PAGE);
-            Poller.<JavascriptExecutor, WebElement>builder()
+            IntervalBasedPoller.builder()
                     .timing(Duration.ofSeconds(30), Duration.ofMillis(1000))
-                    .<CallableFunction<JavascriptExecutor, WebElement>>execute(jsExecutor, o -> executeScript(o, RETURN_BABY_DAGE_PAWS_WEB_APP_TAB))
-                    .until(Objects::nonNull)
-                    .onTimeout(throwingRunnable(() -> new BabyDogePawsException("模拟手机登录失败")))
                     .build()
-                    .get();
+                    .poll(() -> jsExecutor,
+                            o -> SeleniumSupport.<WebElement>executeScript(o, RETURN_BABY_DAGE_PAWS_WEB_APP_TAB),
+                            Objects::nonNull)
+                    .getAsOptional().orElseThrow(() -> new BabyDogePawsException("模拟手机登录失败"));
 
             // 其它线程执行任务时就能感知到最新的authParam了
-            user.authParam = JACKSON_OPERATOR.fromJsonString(items.get(1), Constants.OBJECT_DATA_TYPE).get("initDataRaw") +"&referrer=";
+            user.authParam = JACKSON_OPERATOR.fromJsonString(items.get(1), Constants.OBJECT_DATA_TYPE).get("initDataRaw") + "&referrer=";
 
             // 保存或更新登录信息
             loginInfoMapper.saveOrUpdateLoginInfo(user.id, LocalDateTime.now(), user.authParam);
@@ -228,24 +230,24 @@ public class BabyDogePaws {
             webDriver.get(TELEGRAM_URL);
 
             // 判断当前手机号是不是被ban了
-            return Poller.<JavascriptExecutor, Boolean>builder()
+            return IntervalBasedPoller.builder()
                     .timing(Duration.ofSeconds(60), Duration.ofSeconds(1))
-                    .<CallableFunction<JavascriptExecutor, Boolean>>execute(jsExecutor, o -> Optional.ofNullable(SeleniumSupport.<WebElement>executeScript(o, "return Array.from(document.querySelectorAll(\"button\")).find(button => button.textContent.includes(\"Log in by phone Number\"))"))
-                            .map(element -> {
-                                element.click();
-                                LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(3));
-                                var phoneNumberInput = webDriver.findElement(By.id("sign-in-phone-number"));
-                                phoneNumberInput.clear();
-                                phoneNumberInput.sendKeys(user.areaCode + user.phoneNumber);
-                                var submitButton = webDriver.findElement(By.cssSelector("button[type=\"submit\"]"));
-                                submitButton.click();
-                                LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(3));
-                                return ExpectedConditions.textToBePresentInElementLocated(By.cssSelector("label[for=\"sign-in-phone-number\"]"), "This phone number is banned.").apply((WebDriver) jsExecutor);
-                            }).orElse(false))
-                    .until(b -> b)
-                    .onTimeout(() -> LOGGER.warn("[无法确定游戏登录失败的原因]-{}", user.phoneNumber))
                     .ignoreExceptions(Throwable.class)
                     .build()
+                    .poll(() -> jsExecutor,
+                            o -> Optional.ofNullable(SeleniumSupport.<WebElement>executeScript(o, "return Array.from(document.querySelectorAll(\"button\")).find(button => button.textContent.includes(\"Log in by phone Number\"))"))
+                                    .map(element -> {
+                                        element.click();
+                                        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(3));
+                                        var phoneNumberInput = webDriver.findElement(By.id("sign-in-phone-number"));
+                                        phoneNumberInput.clear();
+                                        phoneNumberInput.sendKeys(user.areaCode + user.phoneNumber);
+                                        var submitButton = webDriver.findElement(By.cssSelector("button[type=\"submit\"]"));
+                                        submitButton.click();
+                                        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(3));
+                                        return ExpectedConditions.textToBePresentInElementLocated(By.cssSelector("label[for=\"sign-in-phone-number\"]"), "This phone number is banned.").apply((WebDriver) jsExecutor);
+                                    }).orElse(false),
+                            b -> b)
                     .get();
         }
     }
