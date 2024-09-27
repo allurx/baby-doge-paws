@@ -84,7 +84,8 @@ public class BabyDogePaws {
     public void playBabyDogePaws(BabyDogePawsUser user, int failNum) {
         try (var chrome = Chrome.builder()
                 .mode(Mode.ATTACH)
-                .addArgs("--user-data-dir=%s".formatted(user.chromeDataDir()), "--headless=new")
+                //.addArgs("--user-data-dir=%s".formatted(user.chromeDataDir()), "--headless=new")
+                .addArgs("--user-data-dir=%s".formatted(user.chromeDataDir()))
                 .build()) {
 
             var webDriver = chrome.webDriver();
@@ -153,7 +154,7 @@ public class BabyDogePaws {
                     .getAsOptional()
                     .orElseThrow(() -> new BabyDogePawsException("获取sessionStorage失败"));
 
-            var mockPhoneLaunchParams = item.replaceFirst("tgWebAppPlatform=weba", "tgWebAppPlatform=ios");
+            var mockPhoneLaunchParams = item.replaceFirst("\"tgWebAppPlatform\":\"weba\"", "\"tgWebAppPlatform\":\"ios\"");
             jsExecutor.executeScript(SET_TELEGRAM_APPS_SESSION_STORAGE_ITEM, key, mockPhoneLaunchParams);
 
             // 重新加载iframe使其能够在web端显示（reload后webdriver依旧在iframe中）
@@ -173,6 +174,8 @@ public class BabyDogePaws {
             loginInfoMapper.saveOrUpdateLoginInfo(user.id, LocalDateTime.now(), user.authParam);
 
             LOGGER.info("[游戏登录成功]-{}:{}", user.phoneNumber, user.authParam);
+
+            LockSupport.park();
 
         } catch (Throwable t) {
 
