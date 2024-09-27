@@ -21,8 +21,8 @@ public final class Javascript {
     public static final String RETURN_BABY_DAGE_PAWS_WEB_APP_CONFIRM_BUTTON = "return Array.from(document.querySelectorAll(\"button\")).find(button => button.textContent.includes(\"Confirm\"))";
 
     // BabyDogePaws游戏的sessionStorage
-    public static final String RETURN_TELEGRAM_APPS_SESSION_STORAGE_ITEMS = "return [sessionStorage.getItem(arguments[0]), sessionStorage.getItem(arguments[1])]";
-    public static final String SET_TELEGRAM_APPS_SESSION_STORAGE_ITEM = "sessionStorage.setItem(arguments[0], arguments[1])";
+    public static final String RETURN_TELEGRAM_APPS_SESSION_STORAGE_ITEMS = "return sessionStorage.getItem(arguments[0])";
+    public static final String SET_TELEGRAM_APPS_SESSION_STORAGE_ITEM = "sessionStorage.setItem(arguments[0])";
 
     // 模拟手机登录成功后会出现的tab页标签
     public static final String RETURN_BABY_DAGE_PAWS_WEB_APP_TAB = "return document.querySelector('a[aria-current=\"page\"]')";

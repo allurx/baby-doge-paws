@@ -27,9 +27,6 @@ import red.zyc.kit.selenium.Mode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -146,31 +143,18 @@ public class BabyDogePaws {
                     .orElseThrow(() -> new BabyDogePawsException("定位游戏iframe失败"));
 
             // 修改sessionStorage模拟手机登录
-            String key1 = "telegram-apps/launch-params";
-            String key2 = "telegram-apps/mini-app";
-            var items = IntervalBasedPoller.builder()
+            String key = "__telegram__initParams";
+            var item = IntervalBasedPoller.builder()
                     .timing(Duration.ofSeconds(30), Duration.ofMillis(1000))
                     .build()
                     .poll(() -> jsExecutor,
-                            o -> SeleniumSupport.<List<String>>executeScript(jsExecutor, RETURN_TELEGRAM_APPS_SESSION_STORAGE_ITEMS, key1, key2),
-                            o -> o != null && o.size() == 2 && o.getFirst() != null && o.get(1) != null)
+                            o -> SeleniumSupport.<String>executeScript(jsExecutor, RETURN_TELEGRAM_APPS_SESSION_STORAGE_ITEMS, key),
+                            o -> o != null && !o.isBlank())
                     .getAsOptional()
                     .orElseThrow(() -> new BabyDogePawsException("获取sessionStorage失败"));
 
-            var mockPhoneLaunchParams = items.getFirst().replaceFirst("tgWebAppPlatform=weba", "tgWebAppPlatform=ios");
-            jsExecutor.executeScript(SET_TELEGRAM_APPS_SESSION_STORAGE_ITEM, key1, mockPhoneLaunchParams);
-
-            // 保存tg用户信息
-            @SuppressWarnings("unchecked")
-            var initData = (Map<String, Object>) JACKSON_OPERATOR.<Map<String, Object>>fromJsonString(items.get(1), Map.class)
-                    .getOrDefault("initData", new HashMap<>());
-            @SuppressWarnings("unchecked")
-            var tgUser = (Map<String, Object>) initData.getOrDefault("user", new HashMap<>());
-            telegramUserMapper.saveOrUpdateTelegramUser(
-                    user.id,
-                    Long.parseLong(tgUser.getOrDefault("id", -1).toString()),
-                    String.valueOf(tgUser.getOrDefault("username", ""))
-            );
+            var mockPhoneLaunchParams = item.replaceFirst("tgWebAppPlatform=weba", "tgWebAppPlatform=ios");
+            jsExecutor.executeScript(SET_TELEGRAM_APPS_SESSION_STORAGE_ITEM, key, mockPhoneLaunchParams);
 
             // 重新加载iframe使其能够在web端显示（reload后webdriver依旧在iframe中）
             jsExecutor.executeScript(RELOAD_PAGE);
@@ -183,7 +167,7 @@ public class BabyDogePaws {
                     .getAsOptional().orElseThrow(() -> new BabyDogePawsException("模拟手机登录失败"));
 
             // 其它线程执行任务时就能感知到最新的authParam了
-            user.authParam = JACKSON_OPERATOR.fromJsonString(items.get(1), Constants.OBJECT_DATA_TYPE).get("initDataRaw") + "&referrer=";
+            user.authParam = JACKSON_OPERATOR.fromJsonString(item, Constants.OBJECT_DATA_TYPE).get("tgWebAppData") + "&referrer=";
 
             // 保存或更新登录信息
             loginInfoMapper.saveOrUpdateLoginInfo(user.id, LocalDateTime.now(), user.authParam);
