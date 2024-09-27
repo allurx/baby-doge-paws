@@ -12,6 +12,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import red.zyc.babydogepaws.common.constant.Constants;
 import red.zyc.babydogepaws.common.util.CommonUtil;
+import red.zyc.babydogepaws.common.util.FileUtil;
 import red.zyc.babydogepaws.common.util.MailUtil;
 import red.zyc.babydogepaws.dao.LoginInfoMapper;
 import red.zyc.babydogepaws.dao.TelegramUserMapper;
@@ -24,6 +25,7 @@ import red.zyc.kit.base.concurrency.IntervalBasedPoller;
 import red.zyc.kit.selenium.Chrome;
 import red.zyc.kit.selenium.Mode;
 
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -68,6 +70,7 @@ public class BabyDogePaws {
      * 启动
      */
     public void bootstrap() {
+        userMapper.listBannedBabyDogeUsers().forEach(user -> FileUtil.deleteDirectory(Paths.get(user.chromeDataDir())));
         if (Arrays.asList(environment.getActiveProfiles()).contains("prod")) {
             LOGGER.info("BabyDoge Paws is launching");
             userMapper.listBabyDogeUsers().forEach(user -> babyDogePawsTask.schedule(new BabyDogePawsGameRequestParam(user)));

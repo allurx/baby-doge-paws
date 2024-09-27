@@ -53,6 +53,34 @@ public interface UserMapper {
             	b.x_api_key,
             	b.friend_num,
             	c.auth_param,
+                d.maximum_card_upgrade_price,
+                d.user_agent
+            FROM
+            	telegram_user a
+            	LEFT JOIN user b ON a.id = b.user_id
+            	LEFT JOIN login_info c ON a.id = c.user_id
+                left join user_config d on a.id=d.user_id
+            WHERE
+            	a.banned = 1
+            ORDER BY
+            	a.id ASC
+            """)
+    List<BabyDogePawsUser> listBannedBabyDogeUsers();
+
+    @Select("""
+            SELECT
+            	a.id,
+            	a.country,
+            	a.area_code,
+            	a.phone_number,
+            	a.source,
+            	a.banned,
+            	a.password_reset,
+            	a.email_reset,
+            	b.invite_link,
+            	b.x_api_key,
+            	b.friend_num,
+            	c.auth_param,
 		        d.maximum_card_upgrade_price,
                 d.user_agent
             FROM
