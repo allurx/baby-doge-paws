@@ -99,7 +99,7 @@ public class BabyDogePaws {
                     .build()
                     .poll(() -> jsExecutor,
                             e -> SeleniumSupport.<Boolean>executeScript(e, RETURN_TELEGRAM_LOGIN_SUCCESS),
-                            r -> r)
+                            this::isTrue)
                     .get())
                     .throwIt(() -> new BabyDogePawsException("telegram页面加载失败"));
 
@@ -114,7 +114,7 @@ public class BabyDogePaws {
                                         element.click();
                                         return true;
                                     }).orElse(false),
-                            r -> r)
+                            this::isTrue)
                     .get())
                     .throwIt(() -> new BabyDogePawsException("找不到play按钮"));
 
@@ -129,7 +129,7 @@ public class BabyDogePaws {
                                         element.click();
                                         return true;
                                     }).orElse(false),
-                            r -> r);
+                            this::isTrue);
 
             // 定位游戏iframe，定位成功后webdriver就会切换到这个iframe中
             IntervalBasedPoller.builder()
@@ -231,9 +231,13 @@ public class BabyDogePaws {
                                         LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(3));
                                         return ExpectedConditions.textToBePresentInElementLocated(By.cssSelector("label[for=\"sign-in-phone-number\"]"), "This phone number is banned.").apply((WebDriver) jsExecutor);
                                     }).orElse(false),
-                            b -> b)
+                            this::isTrue)
                     .get();
         }
+    }
+
+    private boolean isTrue(Boolean b) {
+        return b != null && b;
     }
 
 
