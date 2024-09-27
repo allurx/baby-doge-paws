@@ -84,8 +84,7 @@ public class BabyDogePaws {
     public void playBabyDogePaws(BabyDogePawsUser user, int failNum) {
         try (var chrome = Chrome.builder()
                 .mode(Mode.ATTACH)
-                //.addArgs("--user-data-dir=%s".formatted(user.chromeDataDir()), "--headless=new")
-                .addArgs("--user-data-dir=%s".formatted(user.chromeDataDir()))
+                .addArgs("--user-data-dir=%s".formatted(user.chromeDataDir()), "--headless=new")
                 .build()) {
 
             var webDriver = chrome.webDriver();
@@ -174,8 +173,6 @@ public class BabyDogePaws {
             loginInfoMapper.saveOrUpdateLoginInfo(user.id, LocalDateTime.now(), user.authParam);
 
             LOGGER.info("[游戏登录成功]-{}:{}", user.phoneNumber, user.authParam);
-
-            LockSupport.park();
 
         } catch (Throwable t) {
 
