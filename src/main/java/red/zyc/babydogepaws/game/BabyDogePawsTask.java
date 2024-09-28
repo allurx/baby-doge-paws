@@ -35,7 +35,7 @@ import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 public class BabyDogePawsTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BabyDogePawsTask.class);
-    public static volatile int mineCountMin = 1;
+    public static volatile int mineCountMin = 50;
     public static volatile int mineCountMax = 201;
 
     private static final ScheduledThreadPoolExecutor AUTHENTICATOR = new ScheduledThreadPoolExecutor(0, Thread.ofVirtual().name("Authenticator-", 0).factory());
