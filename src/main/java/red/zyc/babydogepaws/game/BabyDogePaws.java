@@ -37,7 +37,6 @@ import java.util.concurrent.locks.LockSupport;
 import static red.zyc.babydogepaws.selenium.ElementPosition.BABY_DAGE_PAWS_PLAY_BUTTON;
 import static red.zyc.babydogepaws.selenium.ElementPosition.BABY_DAGE_PAWS_WEB_APP;
 import static red.zyc.babydogepaws.selenium.Javascript.*;
-import static red.zyc.kit.base.ConditionalFlow.when;
 import static red.zyc.kit.json.JsonOperator.JACKSON_OPERATOR;
 
 /**
@@ -97,17 +96,19 @@ public class BabyDogePaws {
             webDriver.get(BABY_DOGE_PAWS_URL);
 
             // 等待页面加载完毕
-            when(!IntervalBasedPoller.builder()
+            IntervalBasedPoller.builder()
                     .timing(Duration.ofSeconds(60), Duration.ofSeconds(1))
+                    .ignoreExceptions(Throwable.class)
                     .build()
                     .poll(() -> jsExecutor,
                             e -> SeleniumSupport.<Boolean>executeScript(e, RETURN_TELEGRAM_LOGIN_SUCCESS),
                             this::isTrue)
-                    .get())
+                    .getAsConditional()
+                    .when(b -> !isTrue(b))
                     .throwIt(() -> new BabyDogePawsException("telegram页面加载失败"));
 
             // 点击play按钮
-            when(!IntervalBasedPoller.builder()
+            IntervalBasedPoller.builder()
                     .timing(Duration.ofSeconds(30), Duration.ofMillis(500))
                     .ignoreExceptions(Throwable.class)
                     .build()
@@ -118,7 +119,8 @@ public class BabyDogePaws {
                                         return true;
                                     }).orElse(false),
                             this::isTrue)
-                    .get())
+                    .getAsConditional()
+                    .when(b -> !isTrue(b))
                     .throwIt(() -> new BabyDogePawsException("找不到play按钮"));
 
             // 第一次play会出现一个confirm按钮
